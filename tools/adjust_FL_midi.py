@@ -1,3 +1,12 @@
+'''
+This script does the following:
+- Removes the empty track FL creates (so you can have 15 channels)
+- Multiplies all pitch values by 6 so they sound the same as in FL
+- Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
+Note: this probably needs more fine tuning
+- Removes MIDI events/messages that DK64 will not use or recognize
+'''
+
 from mido import MidiFile
 import tkinter as tk
 from tkinter import filedialog
