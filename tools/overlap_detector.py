@@ -42,3 +42,4 @@ for original_track in input_midi.tracks:
             if msg.note in notes:
                 print(f'Overlapping note {note_to_name(msg.note)} at bar {absolute_ticks / input_midi.ticks_per_beat / numerator + 1} (Tick {absolute_ticks}, Channel {msg.channel})')
             notes[msg.note] = msg
+input("Press the Enter key to continue: ") 
