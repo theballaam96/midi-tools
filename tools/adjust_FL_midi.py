@@ -1,13 +1,15 @@
-'''
+"""
 This script does the following:
 - Removes the empty track FL creates and merges the tempo track with another track, allowing 16 channels to be used.
 - Multiplies all pitch values by 6 so they sound the same as in FL
 - Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
 Note: this probably needs more fine tuning
-'''
+- Removes unrecognized MIDI events
+"""
 
 from mido import MidiFile
 from mido import MidiTrack
+from mido import Message
 import tkinter as tk
 from tkinter import filedialog
 
@@ -18,6 +20,12 @@ valid_CCs = {
     "volume": 7,
     "reverb": 91,
     "pan": 10,
+}
+default_cc_value = {
+    "volume": 100,
+    "panning": 64,
+    "pitch": 0,
+    "reverb": 0,
 }
 
 
@@ -37,11 +45,13 @@ def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
 def move_tempo(midi: MidiFile):
     tempo_track = midi.tracks[0]
     target_track = midi.tracks[1]
-    tempo_msgs = [msg for msg in tempo_track if msg.type == 'set_tempo']
+    tempo_msgs = [msg for msg in tempo_track if msg.type == "set_tempo"]
     total_tempo_time = 0
     for tempo_msg in tempo_msgs:
         total_tempo_time += tempo_msg.time
-        insertion_point, total_target_time = find_insertion_point(target_track, total_tempo_time)
+        insertion_point, total_target_time = find_insertion_point(
+            target_track, total_tempo_time
+        )
         if insertion_point == len(target_track):
             tempo_msg.time = total_tempo_time - total_target_time
         else:
@@ -64,21 +74,21 @@ def get_expected_FL_volume(velocity: int):
     # .62 / 127 ^ 2 * x ^ 2, max = .62
     # .002
     # x + .01, max = .264
-    return (.62 / (127 ** 2)) * (velocity ** 2)
+    return (0.62 / (127**2)) * (velocity**2)
 
 
 def DK_volume_to_approx_velocity(volume: float):
     # y = .002
     # x + 0.1
     # x = (y / .002)
-    approx_velocity = max(0, volume / .002078);
-    approx_velocity = min(127, approx_velocity);
+    approx_velocity = max(0, volume / 0.002078)
+    approx_velocity = min(127, approx_velocity)
     return round(approx_velocity)
 
 
 def get_adjusted_volume(velocity: int):
-    maxFL = .620
-    maxDK = .264
+    maxFL = 0.620
+    maxDK = 0.264
     expected_FL_volume = get_expected_FL_volume(velocity)
     expected_FL_percent = expected_FL_volume / maxFL
     DK_volume = maxDK * expected_FL_percent
@@ -90,29 +100,219 @@ def fix_pitch_and_volumes(midi: MidiFile):
     for track in midi.tracks:
         for msg in track:
             match msg.type:
-                case 'pitchwheel':
+                case "pitchwheel":
                     msg.pitch = multiply_pitch(msg.pitch)
-                case 'note_on':
-                    msg.velocity = get_adjusted_volume(msg.velocity)
-                case 'control_change':
+                # case 'note_on':
+                # msg.velocity = get_adjusted_volume(msg.velocity)###
+                case "control_change":
                     if msg.control == valid_CCs["volume"]:
                         msg.value = get_adjusted_volume(msg.value)
 
 
 def remove_unrecognized_messages(midi: MidiFile):
-    accepted_messages = ["note_off", "note_on", "control_change", "program_change", "pitchwheel"]
+    accepted_messages = [
+        "note_off",
+        "note_on",
+        "control_change",
+        "program_change",
+        "pitchwheel",
+    ]
     for track in midi.tracks:
         filtered_messages = []
-        for msg in track:
+        for i in range(len(track)):
+            msg = track[i]
+            good = False
             if msg.is_meta:
-                filtered_messages.append(msg)
+                good = True
             elif msg.type in accepted_messages:
                 if msg.type != "control_change":
-                    filtered_messages.append(msg)
+                    good = True
                 else:
                     if msg.control in valid_CCs.values():
-                        filtered_messages.append(msg)
+                        good = True
+            if good:
+                filtered_messages.append(msg)
+            else:
+                if i < len(track) - 1:
+                    track[i + 1].time += msg.time
         track[:] = filtered_messages
+
+
+# Below function by GlitchGlider! :3
+
+
+# Automate the fixing of patch events by doing the following
+def fix_program_changes(midi: MidiFile):
+
+    for track in midi.tracks:
+        filtered_program_msgs = []
+        program_times = []
+        all_msgs = []
+        all_msg_times = []
+        track_messages_less = []
+        track_messages_equal = []
+        track_messages_more = []
+        total_time = 0
+        msg_time = 0
+
+        # Scan for all program change events and document their time/exact tick, not documenting duplicates.
+        print("scanning for program change events...")
+        for i in range(len(track)):
+            msg = track[i]
+            if i < len(track) - 1:
+                total_time += msg.time
+            if msg.type == "program_change":
+                if total_time not in program_times:
+                    program_times.append(total_time)
+                    filtered_program_msgs.append(msg)
+
+        print(len(track))
+
+        print("scan found " + str(len(filtered_program_msgs)) + " event(s)...")
+        if len(filtered_program_msgs) > 0:
+            # Scan tick for all pan, pitch, & vol events in individual loops.
+
+            # loop for each program event to filter everything before and after
+            for i in range(len(filtered_program_msgs)):
+                program_msg = filtered_program_msgs[i]
+                all_msg_times = []
+                msg_time = 0
+                all_msgs.clear()
+                track_messages_equal.clear()
+                track_messages_less.clear()
+                track_messages_more.clear()
+
+                chnl_vol = default_cc_value["volume"]
+                chnl_pan = default_cc_value["panning"]
+                chnl_pitch = default_cc_value["pitch"]
+                chnl_verb = default_cc_value["reverb"]
+
+                # inividual loop for each event to classify it
+                for m in range(len(track)):
+                    msg = track[m]
+                    all_msgs.append(msg)
+                    msg_time += msg.time
+                    all_msg_times.append(msg_time)
+                    msg.time = all_msg_times[m] - all_msg_times[m - 1]
+
+                    print("\n\n")
+                    print(msg)
+                    print("Event time: " + str(msg_time))
+                    print("Target time: " + str(program_times[i]))
+
+                    if msg_time < program_times[i]:
+                        track_messages_less.append(msg)
+                        print("Documented low...")
+
+                    elif msg_time == program_times[i]:
+                        print("WE FOUND ONE!")
+                        match msg.type:
+
+                            # Save the patch value
+                            case "program_change":
+                                program_instrument = msg.program
+
+                            # Compare every event to the default value of that event and discard defaults.
+                            # Save a unique value to a variable or use the default if there is none.
+                            case "control_change":
+                                if msg.control == valid_CCs["volume"]:
+                                    if msg.value != default_cc_value["volume"]:
+                                        chnl_vol = msg.value
+                                        print("found unique volume")
+                                elif msg.control == valid_CCs["pan"]:
+                                    if msg.value != default_cc_value["panning"]:
+                                        chnl_pan = msg.value
+                                        print("found unique panning")
+                                elif msg.control == valid_CCs["reverb"]:
+                                    if msg.value != default_cc_value["reverb"]:
+                                        chnl_verb = msg.value
+                                        print("found unique reverb")
+                                else:
+                                    track_messages_equal.append(msg)
+                                    print("\n--- Found unique control event! ---\n")
+
+                            case "pitchwheel":
+                                if msg.pitch != default_cc_value["pitch"]:
+                                    chnl_pitch = msg.pitch
+                                    print("found unique pitch")
+
+                            # Save other messages like note on/off, tempo & invalid ccs.
+                            case _:
+                                track_messages_equal.append(msg)
+                                print("\n--- Found unique event! ---\n")
+
+                    elif msg_time > program_times[i]:
+                        print("Documented high...")
+                        track_messages_more.append(msg)
+
+                # Once all values have been logged, delete all patch related events on that tick and just make a new one with the saved values.
+                if program_times[i] != total_time:
+                    track_messages_equal.insert(
+                        0,
+                        Message(
+                            "program_change",
+                            channel=program_msg.channel,
+                            time=program_msg.time,
+                            program=program_instrument,
+                        ),
+                    )
+
+                    track_messages_equal.insert(
+                        1,
+                        Message(
+                            "control_change",
+                            channel=program_msg.channel,
+                            time=program_msg.time,
+                            control=valid_CCs["volume"],
+                            value=chnl_vol,
+                        ),
+                    )
+
+                    track_messages_equal.insert(
+                        2,
+                        Message(
+                            "control_change",
+                            channel=program_msg.channel,
+                            time=program_msg.time,
+                            control=valid_CCs["pan"],
+                            value=chnl_pan,
+                        ),
+                    )
+
+                    track_messages_equal.insert(
+                        3,
+                        Message(
+                            "control_change",
+                            channel=program_msg.channel,
+                            time=program_msg.time,
+                            control=valid_CCs["reverb"],
+                            value=chnl_verb,
+                        ),
+                    )
+
+                    track_messages_equal.insert(
+                        4,
+                        Message(
+                            "pitchwheel",
+                            channel=program_msg.channel,
+                            time=program_msg.time,
+                            pitch=chnl_pitch,
+                        ),
+                    )
+                else:
+                    print("This is the end of the list, so no patch event is needed")
+
+                # appends event lists to the track
+                all_msgs.clear()
+                all_msgs = (
+                    track_messages_less + track_messages_equal + track_messages_more
+                )
+                track[:] = all_msgs
+
+            print("Finished track...")
+            print("Track has " + str(len(track)) + " events!")
+        else:
+            print("skipping empty track...")
 
 
 def clean_midi(midi_file: str):
@@ -120,8 +320,8 @@ def clean_midi(midi_file: str):
     remove_empty_track(midi)
     move_tempo(midi)
     fix_pitch_and_volumes(midi)
-    #problematic at the moment
-    #remove_unrecognized_messages(midi)
+    remove_unrecognized_messages(midi)
+    fix_program_changes(midi)
     midi.save(midi_file.replace(".mid", "_adjusted.mid"))
 
 
