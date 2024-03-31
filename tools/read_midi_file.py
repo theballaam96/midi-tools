@@ -271,7 +271,7 @@ def clean_midi(midi_file: str):
     global sharp_or_flat
     sharp_or_flat = "sharp"  # 'sharp' or 'flat'
     read_midi_data(midi)
-    # read_single_track(midi, 3)  # Track number 1-16
+    # read_single_track(midi, 1)  # Track number 1-16 or 1-18 before FL fixing
 
 
 clean_midi(filedialog.askopenfilename())

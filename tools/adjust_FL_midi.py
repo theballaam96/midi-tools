@@ -151,7 +151,7 @@ def remove_unrecognized_messages(midi: MidiFile):
 
 
 # Below, unsegmented, function by GlitchGlider! :3
-# I'll clean it up and segment it sometime...
+# I'll clean it up and segment it at some point...
 
 
 def fix_program_changes(midi: MidiFile):
