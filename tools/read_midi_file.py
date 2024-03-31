@@ -1,15 +1,5 @@
-"""
-This script does the following:
-- Removes the empty track FL creates and merges the tempo track with another track, allowing 16 channels to be used.
-- Multiplies all pitch values by 6 so they sound the same as in FL
-- Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
-  - this probably needs more fine tuning
-- Removes unrecognized MIDI events
-- Deletes duplicate patch events caused by fl
-  - This also condenses the subsequent events on the same tick caused by patch changes.
-  - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
-- Can read midi data back out to you 
-"""
+# This script reads midi data back out to you
+
 
 from mido import MidiFile
 from mido import MidiTrack

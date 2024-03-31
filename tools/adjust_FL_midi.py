@@ -8,7 +8,6 @@ This script does the following:
 - Deletes duplicate patch events caused by fl
   - This also condenses the subsequent events on the same tick caused by patch changes.
   - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
-- Can read midi data back out to you 
 """
 
 from mido import MidiFile
