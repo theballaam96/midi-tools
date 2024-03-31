@@ -25,13 +25,6 @@ valid_CCs = {
     "pan": 10,
 }
 
-default_cc_value = {
-    "volume": 100,
-    "panning": 64,
-    "pitch": 0,
-    "reverb": 0,
-}
-
 
 def remove_empty_track(midi: MidiFile):
     del midi.tracks[0]
@@ -166,24 +159,23 @@ def fix_program_changes(midi: MidiFile):
 
     for track in midi.tracks:
         track_number += 1
-        filtered_program_msgs = []
-        program_times = []
+        filtered_program_msg_times = []
         all_msgs = []
-        all_msg_times = []
+        filtered_program_msgs = []
         track_messages_less = []
         track_messages_equal = []
         track_messages_more = []
+        current_msg_time = 0
+        patch_event_time = 0
         total_time = 0
-        msg_time = 0
-        patch_time = 0
 
         # Scan for all program change events and document their time/exact tick, not documenting duplicates.
         for i in range(len(track)):
             msg = track[i]
             total_time += msg.time
             if msg.type == "program_change":
-                if total_time not in program_times:
-                    program_times.append(total_time)
+                if total_time not in filtered_program_msg_times:
+                    filtered_program_msg_times.append(total_time)
                     filtered_program_msgs.append(msg)
 
         print("Track " + str(track_number) + " had " + str(len(track)) + " events.")
@@ -195,76 +187,71 @@ def fix_program_changes(midi: MidiFile):
             for i in range(len(filtered_program_msgs)):
                 program_msg = filtered_program_msgs[i]
                 all_msg_times = []
-                msg_time = 0
-                patch_time = 0
+                current_msg_time = 0
+                patch_event_time = 0
+                prgm_has_reverb = False
                 all_msgs.clear()
                 track_messages_equal.clear()
                 track_messages_less.clear()
                 track_messages_more.clear()
 
-                chnl_vol = default_cc_value["volume"]
-                chnl_pan = default_cc_value["panning"]
-                chnl_pitch = default_cc_value["pitch"]
-                chnl_verb = default_cc_value["reverb"]
-
                 # inividual loop for each event to classify it
                 for m in range(len(track)):
                     msg = track[m]
                     all_msgs.append(msg)
-                    msg_time += msg.time
-                    all_msg_times.append(msg_time)
+                    current_msg_time += msg.time
+                    all_msg_times.append(current_msg_time)
                     msg.time = all_msg_times[m] - all_msg_times[m - 1]
 
-                    if msg_time < program_times[i]:
+                    if current_msg_time < filtered_program_msg_times[i]:
                         track_messages_less.append(msg)
 
-                    elif msg_time == program_times[i]:
+                    elif current_msg_time == filtered_program_msg_times[i]:
                         # saves time detla for all events on this tick for offsetting later
                         match msg.type:
 
                             # Save the patch value
                             case "program_change":
                                 program_instrument = msg.program
-                                patch_time += msg.time
+                                patch_event_time += msg.time
 
                             # Compare every event to the default value of that event and discard defaults.
                             # Save a unique value to a variable or use the default if there is none.
                             case "control_change":
                                 if msg.control == valid_CCs["volume"]:
-                                    if msg.value != default_cc_value["volume"]:
-                                        chnl_vol = msg.value
-                                        patch_time += msg.time
+                                    chnl_vol = msg.value
+                                    patch_event_time += msg.time
                                 elif msg.control == valid_CCs["pan"]:
-                                    if msg.value != default_cc_value["panning"]:
-                                        chnl_pan = msg.value
-                                        patch_time += msg.time
+                                    chnl_pan = msg.value
+                                    patch_event_time += msg.time
                                 elif msg.control == valid_CCs["reverb"]:
-                                    if msg.value != default_cc_value["reverb"]:
+                                    if msg.value != 0:
                                         chnl_verb = msg.value
-                                        patch_time += msg.time
+                                        patch_event_time += msg.time
+                                        prgm_has_reverb = True
+
                                 else:
                                     track_messages_equal.append(msg)
 
                             case "pitchwheel":
-                                if msg.pitch != default_cc_value["pitch"]:
-                                    chnl_pitch = msg.pitch
-                                    patch_time += msg.time
+                                chnl_pitch = msg.pitch
+                                patch_event_time += msg.time
 
                             # Save other messages like note on/off, tempo & invalid ccs.
                             case _:
                                 track_messages_equal.append(msg)
 
-                    elif msg_time > program_times[i]:
+                    elif current_msg_time > filtered_program_msg_times[i]:
                         track_messages_more.append(msg)
 
                 # Once all values have been logged, delete all patch related events on that tick and just make a new one with the saved values.
-                if program_times[i] != total_time:
+                if filtered_program_msg_times[i] != total_time:
                     track_messages_equal.insert(
                         0,
                         Message(
                             "program_change",
                             channel=program_msg.channel,
-                            time=patch_time,
+                            time=patch_event_time,
                             program=program_instrument,
                         ),
                     )
@@ -294,23 +281,24 @@ def fix_program_changes(midi: MidiFile):
                     track_messages_equal.insert(
                         3,
                         Message(
-                            "control_change",
-                            channel=program_msg.channel,
-                            time=0,
-                            control=valid_CCs["reverb"],
-                            value=chnl_verb,
-                        ),
-                    )
-
-                    track_messages_equal.insert(
-                        4,
-                        Message(
                             "pitchwheel",
                             channel=program_msg.channel,
                             time=0,
                             pitch=chnl_pitch,
                         ),
                     )
+
+                    if prgm_has_reverb:
+                        track_messages_equal.insert(
+                            4,
+                            Message(
+                                "control_change",
+                                channel=program_msg.channel,
+                                time=0,
+                                control=valid_CCs["reverb"],
+                                value=chnl_verb,
+                            ),
+                        )
 
                 # appends event lists to the track
                 all_msgs.clear()
