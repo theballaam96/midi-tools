@@ -96,17 +96,32 @@ def get_adjusted_volume(velocity: int):
     return adjusted_velocity
 
 
-def fix_pitch_and_volumes(midi: MidiFile):
+def fix_pitch_and_volumes(midi: MidiFile, todo: str):
     for track in midi.tracks:
         for msg in track:
-            match msg.type:
-                case "pitchwheel":
-                    msg.pitch = multiply_pitch(msg.pitch)
-                # case 'note_on':
-                # msg.velocity = get_adjusted_volume(msg.velocity)###
-                case "control_change":
-                    if msg.control == valid_CCs["volume"]:
-                        msg.value = get_adjusted_volume(msg.value)
+            match todo:
+                case "both":
+                    match msg.type:
+                        case "pitchwheel":
+                            msg.pitch = multiply_pitch(msg.pitch)
+                        case "note_on":
+                            msg.velocity = get_adjusted_volume(msg.velocity)  ###
+                        case "control_change":
+                            if msg.control == valid_CCs["volume"]:
+                                msg.value = get_adjusted_volume(msg.value)
+
+                case "volume":
+                    match msg.type:
+                        case "note_on":
+                            msg.velocity = get_adjusted_volume(msg.velocity)  ###
+                        case "control_change":
+                            if msg.control == valid_CCs["volume"]:
+                                msg.value = get_adjusted_volume(msg.value)
+
+                case "pitch":
+                    match msg.type:
+                        case "pitchwheel":
+                            msg.pitch = multiply_pitch(msg.pitch)
 
 
 def remove_unrecognized_messages(midi: MidiFile):
@@ -138,13 +153,15 @@ def remove_unrecognized_messages(midi: MidiFile):
         track[:] = filtered_messages
 
 
-# Below function by GlitchGlider! :3
+# Below, unsegmented, function by GlitchGlider! :3
+# I'll clean it up and segment it sometime...
 
 
-# Automate the fixing of patch events by doing the following
 def fix_program_changes(midi: MidiFile):
+    track_number = 0
 
     for track in midi.tracks:
+        track_number += 1
         filtered_program_msgs = []
         program_times = []
         all_msgs = []
@@ -154,21 +171,20 @@ def fix_program_changes(midi: MidiFile):
         track_messages_more = []
         total_time = 0
         msg_time = 0
+        patch_time = 0
 
         # Scan for all program change events and document their time/exact tick, not documenting duplicates.
         print("scanning for program change events...")
         for i in range(len(track)):
             msg = track[i]
-            if i < len(track) - 1:
-                total_time += msg.time
+            total_time += msg.time
             if msg.type == "program_change":
                 if total_time not in program_times:
                     program_times.append(total_time)
                     filtered_program_msgs.append(msg)
 
-        print(len(track))
-
         print("scan found " + str(len(filtered_program_msgs)) + " event(s)...")
+
         if len(filtered_program_msgs) > 0:
             # Scan tick for all pan, pitch, & vol events in individual loops.
 
@@ -177,6 +193,7 @@ def fix_program_changes(midi: MidiFile):
                 program_msg = filtered_program_msgs[i]
                 all_msg_times = []
                 msg_time = 0
+                patch_time = 0
                 all_msgs.clear()
                 track_messages_equal.clear()
                 track_messages_less.clear()
@@ -205,7 +222,9 @@ def fix_program_changes(midi: MidiFile):
                         print("Documented low...")
 
                     elif msg_time == program_times[i]:
-                        print("WE FOUND ONE!")
+                        patch_time += msg.time
+                        # saves time detla for all events on this tick for offsetting later
+                        print("Tick Matched...")
                         match msg.type:
 
                             # Save the patch value
@@ -218,28 +237,28 @@ def fix_program_changes(midi: MidiFile):
                                 if msg.control == valid_CCs["volume"]:
                                     if msg.value != default_cc_value["volume"]:
                                         chnl_vol = msg.value
-                                        print("found unique volume")
+                                        print("Found unique volume!")
                                 elif msg.control == valid_CCs["pan"]:
                                     if msg.value != default_cc_value["panning"]:
                                         chnl_pan = msg.value
-                                        print("found unique panning")
+                                        print("Found unique panning!")
                                 elif msg.control == valid_CCs["reverb"]:
                                     if msg.value != default_cc_value["reverb"]:
                                         chnl_verb = msg.value
-                                        print("found unique reverb")
+                                        print("Found unique reverb!")
                                 else:
                                     track_messages_equal.append(msg)
-                                    print("\n--- Found unique control event! ---\n")
+                                    print("Found unique control event!")
 
                             case "pitchwheel":
                                 if msg.pitch != default_cc_value["pitch"]:
                                     chnl_pitch = msg.pitch
-                                    print("found unique pitch")
+                                    print("Found unique pitch!")
 
                             # Save other messages like note on/off, tempo & invalid ccs.
                             case _:
                                 track_messages_equal.append(msg)
-                                print("\n--- Found unique event! ---\n")
+                                print("Found unique event!")
 
                     elif msg_time > program_times[i]:
                         print("Documented high...")
@@ -252,7 +271,7 @@ def fix_program_changes(midi: MidiFile):
                         Message(
                             "program_change",
                             channel=program_msg.channel,
-                            time=program_msg.time,
+                            time=patch_time,
                             program=program_instrument,
                         ),
                     )
@@ -262,7 +281,7 @@ def fix_program_changes(midi: MidiFile):
                         Message(
                             "control_change",
                             channel=program_msg.channel,
-                            time=program_msg.time,
+                            time=0,
                             control=valid_CCs["volume"],
                             value=chnl_vol,
                         ),
@@ -273,7 +292,7 @@ def fix_program_changes(midi: MidiFile):
                         Message(
                             "control_change",
                             channel=program_msg.channel,
-                            time=program_msg.time,
+                            time=0,
                             control=valid_CCs["pan"],
                             value=chnl_pan,
                         ),
@@ -284,7 +303,7 @@ def fix_program_changes(midi: MidiFile):
                         Message(
                             "control_change",
                             channel=program_msg.channel,
-                            time=program_msg.time,
+                            time=0,
                             control=valid_CCs["reverb"],
                             value=chnl_verb,
                         ),
@@ -295,12 +314,12 @@ def fix_program_changes(midi: MidiFile):
                         Message(
                             "pitchwheel",
                             channel=program_msg.channel,
-                            time=program_msg.time,
+                            time=0,
                             pitch=chnl_pitch,
                         ),
                     )
                 else:
-                    print("This is the end of the list, so no patch event is needed")
+                    print("\nThis is the last tick, so no patch event is needed")
 
                 # appends event lists to the track
                 all_msgs.clear()
@@ -310,7 +329,9 @@ def fix_program_changes(midi: MidiFile):
                 track[:] = all_msgs
 
             print("Finished track...")
-            print("Track has " + str(len(track)) + " events!")
+            print(
+                "Track " + str(track_number) + " has " + str(len(track)) + " events!\n"
+            )
         else:
             print("skipping empty track...")
 
@@ -319,7 +340,7 @@ def clean_midi(midi_file: str):
     midi = MidiFile(midi_file)
     remove_empty_track(midi)
     move_tempo(midi)
-    fix_pitch_and_volumes(midi)
+    fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
     remove_unrecognized_messages(midi)
     fix_program_changes(midi)
     midi.save(midi_file.replace(".mid", "_adjusted.mid"))
