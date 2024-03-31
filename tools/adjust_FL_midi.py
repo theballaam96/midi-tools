@@ -178,7 +178,6 @@ def fix_program_changes(midi: MidiFile):
         patch_time = 0
 
         # Scan for all program change events and document their time/exact tick, not documenting duplicates.
-        print("scanning for program change events...")
         for i in range(len(track)):
             msg = track[i]
             total_time += msg.time
@@ -187,7 +186,7 @@ def fix_program_changes(midi: MidiFile):
                     program_times.append(total_time)
                     filtered_program_msgs.append(msg)
 
-        print("scan found " + str(len(filtered_program_msgs)) + " event(s)...")
+        print("Track " + str(track_number) + " had " + str(len(track)) + " events.")
 
         if len(filtered_program_msgs) > 0:
             # Scan tick for all pan, pitch, & vol events in individual loops.
@@ -216,18 +215,11 @@ def fix_program_changes(midi: MidiFile):
                     all_msg_times.append(msg_time)
                     msg.time = all_msg_times[m] - all_msg_times[m - 1]
 
-                    print("\n")
-                    print(msg)
-                    print("Event time: " + str(msg_time))
-                    print("Target time: " + str(program_times[i]))
-
                     if msg_time < program_times[i]:
                         track_messages_less.append(msg)
-                        print("Documented low...")
 
                     elif msg_time == program_times[i]:
                         # saves time detla for all events on this tick for offsetting later
-                        print("Tick Matched...")
                         match msg.type:
 
                             # Save the patch value
@@ -242,34 +234,27 @@ def fix_program_changes(midi: MidiFile):
                                     if msg.value != default_cc_value["volume"]:
                                         chnl_vol = msg.value
                                         patch_time += msg.time
-                                        print("Found unique volume!")
                                 elif msg.control == valid_CCs["pan"]:
                                     if msg.value != default_cc_value["panning"]:
                                         chnl_pan = msg.value
                                         patch_time += msg.time
-                                        print("Found unique panning!")
                                 elif msg.control == valid_CCs["reverb"]:
                                     if msg.value != default_cc_value["reverb"]:
                                         chnl_verb = msg.value
                                         patch_time += msg.time
-                                        print("Found unique reverb!")
                                 else:
                                     track_messages_equal.append(msg)
-                                    print("Found unique control event!")
 
                             case "pitchwheel":
                                 if msg.pitch != default_cc_value["pitch"]:
                                     chnl_pitch = msg.pitch
                                     patch_time += msg.time
-                                    print("Found unique pitch!")
 
                             # Save other messages like note on/off, tempo & invalid ccs.
                             case _:
                                 track_messages_equal.append(msg)
-                                print("Found unique event!")
 
                     elif msg_time > program_times[i]:
-                        print("Documented high...")
                         track_messages_more.append(msg)
 
                 # Once all values have been logged, delete all patch related events on that tick and just make a new one with the saved values.
@@ -326,8 +311,6 @@ def fix_program_changes(midi: MidiFile):
                             pitch=chnl_pitch,
                         ),
                     )
-                else:
-                    print("\nThis is the last tick, so no patch event is needed")
 
                 # appends event lists to the track
                 all_msgs.clear()
@@ -336,16 +319,13 @@ def fix_program_changes(midi: MidiFile):
                 )
                 track[:] = all_msgs
 
-            print("Finished track...")
             print(
                 "Track "
                 + str(track_number)
-                + " has "
+                + " now has "
                 + str(len(track))
-                + " events!\n\n"
+                + " events!\n"
             )
-        else:
-            print("skipping empty track...")
 
 
 def clean_midi(midi_file: str):
