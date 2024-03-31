@@ -356,7 +356,7 @@ def clean_midi(midi_file: str):
     fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
     remove_unrecognized_messages(midi)
     fix_program_changes(midi)
-    # midi.save(midi_file.replace(".mid", "_adjusted.mid"))
+    midi.save(midi_file.replace(".mid", "_adjusted.mid"))
 
 
 clean_midi(filedialog.askopenfilename())

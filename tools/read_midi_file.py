@@ -182,6 +182,8 @@ def read_msg_data(track_data: list, track_id: int):
                 )
             case "end_of_track":
                 print(str(time) + "\tEnd of Track")
+            case "sequence_number":
+                print(str(time) + "\tSequence Number\t\t" + str(msg.number))
             case "control_change":
                 control_type = cc_to_name[msg.control]
                 match control_type:
