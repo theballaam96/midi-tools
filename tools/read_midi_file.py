@@ -184,13 +184,41 @@ def read_msg_data(track_data: list, track_id: int):
                 print(str(time) + "\tEnd of Track")
             case "control_change":
                 control_type = cc_to_name[msg.control]
-                print(
-                    str(time)
-                    + "\tControl Change\t\t"
-                    + str(control_type)
-                    + "   \t"
-                    + str(msg.value)
-                )
+                match control_type:
+                    case "Reverb":
+                        print(
+                            str(time)
+                            + "\tControl Change\t\t"
+                            + str(control_type)
+                            + "   \t"
+                            + str(round(msg.value / 1.27, 2))
+                            + "%"
+                        )
+                    case "Panning":
+                        if msg.value < 64:
+                            print(
+                                str(time)
+                                + "\tControl Change\t\tPanning\t\tLeft "
+                                + str(round((-msg.value + 64) / 0.64, 2))
+                                + "%"
+                            )
+                        elif msg.value > 64:
+                            print(
+                                str(time)
+                                + "\tControl Change\t\tPanning\t\tRight "
+                                + str(round((msg.value - 64) / 0.63, 2))
+                                + "%"
+                            )
+                        else:
+                            print(str(time) + "\tControl Change\t\tPitch\t\t0")
+                    case _:
+                        print(
+                            str(time)
+                            + "\tControl Change\t\t"
+                            + str(control_type)
+                            + "   \t"
+                            + str(msg.value)
+                        )
             case "program_change":
                 print(
                     str(time)
@@ -201,19 +229,19 @@ def read_msg_data(track_data: list, track_id: int):
                 if msg.pitch < 0:
                     print(
                         str(time)
-                        + "\tControl Change\t\tPitch\t\tLeft "
-                        + str(int((-msg.pitch) / 81.92))
-                        + "%"
+                        + "\tControl Change\t\tPitch\t       -"
+                        + str(round((-msg.pitch) / 4096, 2))
+                        + " ST"
                     )
                 elif msg.pitch > 0:
                     print(
                         str(time)
-                        + "\tControl Change\t\tPitch\t\tRight "
-                        + str(int((msg.pitch) / 81.91))
-                        + "%"
+                        + "\tControl Change\t\tPitch\t       +"
+                        + str(round((msg.pitch) / 4095.5, 2))
+                        + " ST"
                     )
                 else:
-                    print(str(time) + "\tControl Change\t\tPitch\t\tCentered")
+                    print(str(time) + "\tControl Change\t\tPitch\t\t0 ST")
             case "note_on":
                 print(str(time) + "\tNote On\t\t\t" + get_note_name(msg.note))
             case "note_off":
