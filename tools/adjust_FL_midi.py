@@ -8,6 +8,7 @@ This script does the following:
 - Deletes duplicate patch events caused by fl
   - This also condenses the subsequent events on the same tick caused by patch changes.
   - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
+- Can read midi data back out to you 
 """
 
 from mido import MidiFile
@@ -24,6 +25,7 @@ valid_CCs = {
     "reverb": 91,
     "pan": 10,
 }
+
 default_cc_value = {
     "volume": 100,
     "panning": 64,
@@ -215,7 +217,7 @@ def fix_program_changes(midi: MidiFile):
                     all_msg_times.append(msg_time)
                     msg.time = all_msg_times[m] - all_msg_times[m - 1]
 
-                    print("\n\n")
+                    print("\n")
                     print(msg)
                     print("Event time: " + str(msg_time))
                     print("Target time: " + str(program_times[i]))
@@ -225,7 +227,6 @@ def fix_program_changes(midi: MidiFile):
                         print("Documented low...")
 
                     elif msg_time == program_times[i]:
-                        patch_time += msg.time
                         # saves time detla for all events on this tick for offsetting later
                         print("Tick Matched...")
                         match msg.type:
@@ -233,6 +234,7 @@ def fix_program_changes(midi: MidiFile):
                             # Save the patch value
                             case "program_change":
                                 program_instrument = msg.program
+                                patch_time += msg.time
 
                             # Compare every event to the default value of that event and discard defaults.
                             # Save a unique value to a variable or use the default if there is none.
@@ -240,14 +242,17 @@ def fix_program_changes(midi: MidiFile):
                                 if msg.control == valid_CCs["volume"]:
                                     if msg.value != default_cc_value["volume"]:
                                         chnl_vol = msg.value
+                                        patch_time += msg.time
                                         print("Found unique volume!")
                                 elif msg.control == valid_CCs["pan"]:
                                     if msg.value != default_cc_value["panning"]:
                                         chnl_pan = msg.value
+                                        patch_time += msg.time
                                         print("Found unique panning!")
                                 elif msg.control == valid_CCs["reverb"]:
                                     if msg.value != default_cc_value["reverb"]:
                                         chnl_verb = msg.value
+                                        patch_time += msg.time
                                         print("Found unique reverb!")
                                 else:
                                     track_messages_equal.append(msg)
@@ -256,6 +261,7 @@ def fix_program_changes(midi: MidiFile):
                             case "pitchwheel":
                                 if msg.pitch != default_cc_value["pitch"]:
                                     chnl_pitch = msg.pitch
+                                    patch_time += msg.time
                                     print("Found unique pitch!")
 
                             # Save other messages like note on/off, tempo & invalid ccs.
@@ -333,7 +339,11 @@ def fix_program_changes(midi: MidiFile):
 
             print("Finished track...")
             print(
-                "Track " + str(track_number) + " has " + str(len(track)) + " events!\n"
+                "Track "
+                + str(track_number)
+                + " has "
+                + str(len(track))
+                + " events!\n\n"
             )
         else:
             print("skipping empty track...")
@@ -346,7 +356,7 @@ def clean_midi(midi_file: str):
     fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
     remove_unrecognized_messages(midi)
     fix_program_changes(midi)
-    midi.save(midi_file.replace(".mid", "_adjusted.mid"))
+    # midi.save(midi_file.replace(".mid", "_adjusted.mid"))
 
 
 clean_midi(filedialog.askopenfilename())
