@@ -235,7 +235,13 @@ def read_msg_data(track_data: list, track_id: int):
                 else:
                     print(str(time) + "\tControl Change\t\tPitch\t\t0 ST")
             case "note_on":
-                print(str(time) + "\tNote On\t\t\t" + get_note_name(msg.note))
+                print(
+                    str(time)
+                    + "\tNote On\t\t\t"
+                    + get_note_name(msg.note)
+                    + "\t\t"
+                    + str(msg.velocity)
+                )
             case "note_off":
                 print(str(time) + "\tNote Off\t\t" + get_note_name(msg.note))
             case _:
