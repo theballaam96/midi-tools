@@ -162,18 +162,16 @@ def read_msg_data(track_data: list, track_id: int):
         msg = track_data[i]
         time += msg.time
         match msg.type:
-            case "track_name":
-                print(str(time) + "\tTrack Name\t\t" + msg.name)
-            case "set_tempo":
+            case "note_on":
                 print(
                     str(time)
-                    + "\tTempo Change\t\t"
-                    + str(round(tempo2bpm(msg.tempo), 3))
+                    + "\tNote On\t\t\t"
+                    + get_note_name(msg.note)
+                    + "\t\t"
+                    + str(msg.velocity)
                 )
-            case "end_of_track":
-                print(str(time) + "\tEnd of Track")
-            case "sequence_number":
-                print(str(time) + "\tSequence Number\t\t" + str(msg.number))
+            case "note_off":
+                print(str(time) + "\tNote Off\t\t" + get_note_name(msg.note))
             case "control_change":
                 control_type = cc_to_name[msg.control]
                 match control_type:
@@ -234,25 +232,53 @@ def read_msg_data(track_data: list, track_id: int):
                     )
                 else:
                     print(str(time) + "\tControl Change\t\tPitch\t\t0 ST")
-            case "note_on":
+            case "track_name":
+                print(str(time) + "\tTrack Name\t\t" + msg.name)
+            case "set_tempo":
                 print(
                     str(time)
-                    + "\tNote On\t\t\t"
-                    + get_note_name(msg.note)
-                    + "\t\t"
-                    + str(msg.velocity)
+                    + "\tTempo Change\t\t"
+                    + str(round(tempo2bpm(msg.tempo), 3))
                 )
-            case "note_off":
-                print(str(time) + "\tNote Off\t\t" + get_note_name(msg.note))
+            case "end_of_track":
+                print(str(time) + "\tEnd of Track")
+            case "sequence_number":
+                print(str(time) + "\tSequence Number\t\t" + str(msg.number))
+            case "time_signature":
+                print(
+                    str(time)
+                    + "\tTime Signature\t\t"
+                    + str(msg.numerator)
+                    + "/"
+                    + str(msg.denominator)
+                )
+            case "key_signature":
+                print(str(time) + "\tKey Signature\t\t" + str(msg.key))
+            case "channel_prefix":
+                print(str(time) + "\tChannel Prefix")
+            case "instrument_name":
+                print(str(time) + "\tInstrument Name\t\t" + msg.name)
+            case "smpte_offset":
+                print(
+                    str(time)
+                    + "\tSMPTE Offset\t\t"
+                    + str(f"{msg.hours:02d}")
+                    + ":"
+                    + str(f"{msg.minutes:02d}")
+                    + ":"
+                    + str(f"{msg.seconds:02d}")
+                    + ":"
+                    + str(f"{int((msg.frames / msg.frame_rate) * 100):02d}")
+                )
             case _:
-                print(str(time) + "\tUnknown Message")
+                print(str(time) + "\tUnknown Message\t\t" + str(msg))
     print("\n")
 
 
 def read_midi_data(midi: MidiFile):
     track_number = 0
     for track in midi.tracks:
-        print("= Track " + str(track_number) + " =\n")
+        print("= Track " + str(track_number + 1) + " =\n")
         read_msg_data(track, track_number)
         track_number += 1
 
@@ -271,7 +297,7 @@ def clean_midi(midi_file: str):
     global sharp_or_flat
     sharp_or_flat = "sharp"  # 'sharp' or 'flat'
     read_midi_data(midi)
-    # read_single_track(midi, 1)  # Track number 1-16 or 1-18 before FL fixing
+    # read_single_track(midi, 16)  # Track number 1-16 or 1-18 before FL fixing
 
 
 clean_midi(filedialog.askopenfilename())
