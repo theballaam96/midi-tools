@@ -18,8 +18,8 @@ cc_to_name = {
     10: "Panning",
     11: "Expression",
     91: "Reverb",
-    100: "RPN - 100",
-    101: "RPN - 101",
+    100: "RPN 100",
+    101: "RPN 101",
 }
 dk64_instrument_list = [
     "N/A",
@@ -173,48 +173,60 @@ def read_msg_data(track_data: list, track_id: int):
             case "note_off":
                 print(str(time) + "\tNote Off\t\t" + get_note_name(msg.note))
             case "control_change":
-                control_type = cc_to_name[msg.control]
-                match control_type:
-                    case "Reverb":
-                        print(
-                            str(time)
-                            + "\tControl Change\t\t"
-                            + str(control_type)
-                            + "   \t"
-                            + str(round(msg.value / 1.27, 2))
-                            + "%"
-                        )
-                    case "Panning":
-                        if msg.value < 64:
+                if msg.control in cc_to_name:
+                    control_type = cc_to_name[msg.control]
+                    match control_type:
+                        case "Reverb":
                             print(
                                 str(time)
-                                + "\tControl Change\t\tPanning\t\tLeft "
-                                + str(round((-msg.value + 64) / 0.64, 2))
+                                + "\tControl Change\t\t"
+                                + str(control_type)
+                                + "   \t"
+                                + str(round(msg.value / 1.27, 2))
                                 + "%"
                             )
-                        elif msg.value > 64:
+                        case "Panning":
+                            if msg.value < 64:
+                                print(
+                                    str(time)
+                                    + "\tControl Change\t\tPanning\t\tLeft "
+                                    + str(round((-msg.value + 64) / 0.64, 2))
+                                    + "%"
+                                )
+                            elif msg.value > 64:
+                                print(
+                                    str(time)
+                                    + "\tControl Change\t\tPanning\t\tRight "
+                                    + str(round((msg.value - 64) / 0.63, 2))
+                                    + "%"
+                                )
+                            else:
+                                print(str(time) + "\tControl Change\t\tPitch\t\t0")
+                        case _:
                             print(
                                 str(time)
-                                + "\tControl Change\t\tPanning\t\tRight "
-                                + str(round((msg.value - 64) / 0.63, 2))
-                                + "%"
+                                + "\tControl Change\t\t"
+                                + str(control_type)
+                                + "   \t"
+                                + str(msg.value)
                             )
-                        else:
-                            print(str(time) + "\tControl Change\t\tPitch\t\t0")
-                    case _:
-                        print(
-                            str(time)
-                            + "\tControl Change\t\t"
-                            + str(control_type)
-                            + "   \t"
-                            + str(msg.value)
-                        )
+                else:
+                    print(
+                        str(time)
+                        + "\tControl Change\t\tCC "
+                        + str(msg.control)
+                        + " \t\t"
+                        + str(msg.value)
+                    )
             case "program_change":
-                print(
-                    str(time)
-                    + "\tProgram Change\t\t"
-                    + dk64_instrument_list[msg.program]
-                )
+                if msg.program < 96:
+                    print(
+                        str(time)
+                        + "\tProgram Change\t\t"
+                        + dk64_instrument_list[msg.program]
+                    )
+                else:
+                    print(str(time) + "\tProgram Change\t\tN/A")
             case "pitchwheel":
                 if msg.pitch < 0:
                     print(
@@ -232,6 +244,8 @@ def read_msg_data(track_data: list, track_id: int):
                     )
                 else:
                     print(str(time) + "\tControl Change\t\tPitch\t\t0 ST")
+            case "aftertouch":
+                print(str(time) + "\tControl Change\t\tAftertouch\t" + str(msg.value))
             case "track_name":
                 print(str(time) + "\tTrack Name\t\t" + msg.name)
             case "set_tempo":
@@ -258,6 +272,12 @@ def read_msg_data(track_data: list, track_id: int):
                 print(str(time) + "\tChannel Prefix")
             case "instrument_name":
                 print(str(time) + "\tInstrument Name\t\t" + msg.name)
+            case "midi_port":
+                print(str(time) + "\tMidi Port\t\t" + str(msg.port))
+            case "marker":
+                print(str(time) + '\tMarker\t\t\t"' + str(msg.text) + '"')
+            case "text":
+                print(str(time) + '\tText\t\t\t"' + str(msg.text) + '"')
             case "smpte_offset":
                 print(
                     str(time)
