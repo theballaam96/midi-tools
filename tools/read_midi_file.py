@@ -169,7 +169,7 @@ def read_msg_data(track_data: list, track_id: int):
                     + str(msg.channel)
                     + "\tNote On\t\t\t"
                     + get_note_name(msg.note)
-                    + "\t\t"
+                    + "\t\t\t"
                     + str(msg.velocity)
                 )
             case "note_off":
@@ -191,7 +191,7 @@ def read_msg_data(track_data: list, track_id: int):
                                 + str(msg.channel)
                                 + "\tControl Change\t\t"
                                 + str(control_type)
-                                + "   \t"
+                                + "   \t\t"
                                 + str(round(msg.value / 1.27, 2))
                                 + "%"
                             )
@@ -201,25 +201,25 @@ def read_msg_data(track_data: list, track_id: int):
                                     str(time)
                                     + "\tCh. "
                                     + str(msg.channel)
-                                    + "\tControl Change\t\tPanning\t\tLeft "
+                                    + "\tControl Change\t\tPanning\t\t\t"
                                     + str(round((-msg.value + 64) / 0.64, 2))
-                                    + "%"
+                                    + "% Left"
                                 )
                             elif msg.value > 64:
                                 print(
                                     str(time)
                                     + "\tCh. "
                                     + str(msg.channel)
-                                    + "\tControl Change\t\tPanning\t\tRight "
+                                    + "\tControl Change\t\tPanning\t\t\t"
                                     + str(round((msg.value - 64) / 0.63, 2))
-                                    + "%"
+                                    + "% Right"
                                 )
                             else:
                                 print(
                                     str(time)
                                     + "\tCh. "
                                     + str(msg.channel)
-                                    + "\tControl Change\t\tPanning\t\t0"
+                                    + "\tControl Change\t\tPanning\t\t\t0"
                                 )
                         case _:
                             print(
@@ -228,7 +228,7 @@ def read_msg_data(track_data: list, track_id: int):
                                 + str(msg.channel)
                                 + "\tControl Change\t\t"
                                 + str(control_type)
-                                + "   \t"
+                                + "   \t\t"
                                 + str(msg.value)
                             )
                 else:
@@ -238,7 +238,7 @@ def read_msg_data(track_data: list, track_id: int):
                         + str(msg.channel)
                         + "\tControl Change\t\tCC "
                         + str(msg.control)
-                        + " \t\t"
+                        + " \t\t\t"
                         + str(msg.value)
                     )
             case "program_change":
@@ -263,7 +263,7 @@ def read_msg_data(track_data: list, track_id: int):
                         str(time)
                         + "\tCh. "
                         + str(msg.channel)
-                        + "\tControl Change\t\tPitch\t       -"
+                        + "\tControl Change\t\tPitch\t\t       -"
                         + str(round((-msg.pitch) / 4096, 2))
                         + " ST"
                     )
@@ -272,7 +272,7 @@ def read_msg_data(track_data: list, track_id: int):
                         str(time)
                         + "\tCh. "
                         + str(msg.channel)
-                        + "\tControl Change\t\tPitch\t       +"
+                        + "\tControl Change\t\tPitch\t\t       +"
                         + str(round((msg.pitch) / 4095.5, 2))
                         + " ST"
                     )
@@ -281,14 +281,14 @@ def read_msg_data(track_data: list, track_id: int):
                         str(time)
                         + "\tCh. "
                         + str(msg.channel)
-                        + "\tControl Change\t\tPitch\t\t0 ST"
+                        + "\tControl Change\t\tPitch\t\t\t0 ST"
                     )
             case "aftertouch":
                 print(
                     str(time)
                     + "\tCh. "
                     + str(msg.channel)
-                    + "\tControl Change\t\tAftertouch\t"
+                    + "\tControl Change\t\tAftertouch\t\t"
                     + str(msg.value)
                 )
             case "track_name":
@@ -342,9 +342,11 @@ def read_msg_data(track_data: list, track_id: int):
                     + str(msg.data)
                 )
             case "copyright":
-                print(str(time) + '\tMeta\tCopyright\t\t"' + str(msg.text) + '"')
+                print(str(time) + '\tMeta\tCopyright\t\t\t"' + str(msg.text) + '"')
             case _:
-                print(str(time) + "\tMeta\tUnknown Message\t\t" + str(msg))
+                print(
+                    str(time) + "\tMeta\tUnknown Message\n----------------" + str(msg)
+                )
     print("\n")
 
 
