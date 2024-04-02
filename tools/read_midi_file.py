@@ -290,6 +290,8 @@ def read_msg_data(track_data: list, track_id: int):
                     + ":"
                     + str(f"{int((msg.frames / msg.frame_rate) * 100):02d}")
                 )
+            case "sysex":
+                print(str(time) + "\tSysEx Message\n\t" + str(msg.data))
             case _:
                 print(str(time) + "\tUnknown Message\t\t" + str(msg))
     print("\n")
