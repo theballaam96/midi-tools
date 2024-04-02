@@ -165,13 +165,21 @@ def read_msg_data(track_data: list, track_id: int):
             case "note_on":
                 print(
                     str(time)
+                    + "\tCh. "
+                    + str(msg.channel)
                     + "\tNote On\t\t\t"
                     + get_note_name(msg.note)
                     + "\t\t"
                     + str(msg.velocity)
                 )
             case "note_off":
-                print(str(time) + "\tNote Off\t\t" + get_note_name(msg.note))
+                print(
+                    str(time)
+                    + "\tCh. "
+                    + str(msg.channel)
+                    + "\tNote Off\t\t"
+                    + get_note_name(msg.note)
+                )
             case "control_change":
                 if msg.control in cc_to_name:
                     control_type = cc_to_name[msg.control]
@@ -179,6 +187,8 @@ def read_msg_data(track_data: list, track_id: int):
                         case "Reverb":
                             print(
                                 str(time)
+                                + "\tCh. "
+                                + str(msg.channel)
                                 + "\tControl Change\t\t"
                                 + str(control_type)
                                 + "   \t"
@@ -189,6 +199,8 @@ def read_msg_data(track_data: list, track_id: int):
                             if msg.value < 64:
                                 print(
                                     str(time)
+                                    + "\tCh. "
+                                    + str(msg.channel)
                                     + "\tControl Change\t\tPanning\t\tLeft "
                                     + str(round((-msg.value + 64) / 0.64, 2))
                                     + "%"
@@ -196,15 +208,24 @@ def read_msg_data(track_data: list, track_id: int):
                             elif msg.value > 64:
                                 print(
                                     str(time)
+                                    + "\tCh. "
+                                    + str(msg.channel)
                                     + "\tControl Change\t\tPanning\t\tRight "
                                     + str(round((msg.value - 64) / 0.63, 2))
                                     + "%"
                                 )
                             else:
-                                print(str(time) + "\tControl Change\t\tPitch\t\t0")
+                                print(
+                                    str(time)
+                                    + "\tCh. "
+                                    + str(msg.channel)
+                                    + "\tControl Change\t\tPanning\t\t0"
+                                )
                         case _:
                             print(
                                 str(time)
+                                + "\tCh. "
+                                + str(msg.channel)
                                 + "\tControl Change\t\t"
                                 + str(control_type)
                                 + "   \t"
@@ -213,6 +234,8 @@ def read_msg_data(track_data: list, track_id: int):
                 else:
                     print(
                         str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
                         + "\tControl Change\t\tCC "
                         + str(msg.control)
                         + " \t\t"
@@ -222,15 +245,24 @@ def read_msg_data(track_data: list, track_id: int):
                 if msg.program < 94:
                     print(
                         str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
                         + "\tProgram Change\t\t"
                         + dk64_instrument_list[msg.program]
                     )
                 else:
-                    print(str(time) + "\tProgram Change\t\tN/A")
+                    print(
+                        str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tProgram Change\t\tN/A"
+                    )
             case "pitchwheel":
                 if msg.pitch < 0:
                     print(
                         str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
                         + "\tControl Change\t\tPitch\t       -"
                         + str(round((-msg.pitch) / 4096, 2))
                         + " ST"
@@ -238,50 +270,63 @@ def read_msg_data(track_data: list, track_id: int):
                 elif msg.pitch > 0:
                     print(
                         str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
                         + "\tControl Change\t\tPitch\t       +"
                         + str(round((msg.pitch) / 4095.5, 2))
                         + " ST"
                     )
                 else:
-                    print(str(time) + "\tControl Change\t\tPitch\t\t0 ST")
+                    print(
+                        str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tControl Change\t\tPitch\t\t0 ST"
+                    )
             case "aftertouch":
-                print(str(time) + "\tControl Change\t\tAftertouch\t" + str(msg.value))
+                print(
+                    str(time)
+                    + "\tCh. "
+                    + str(msg.channel)
+                    + "\tControl Change\t\tAftertouch\t"
+                    + str(msg.value)
+                )
             case "track_name":
-                print(str(time) + "\tTrack Name\t\t" + msg.name)
+                print(str(time) + "\tMeta\tTrack Name\t\t" + msg.name)
             case "set_tempo":
                 print(
                     str(time)
-                    + "\tTempo Change\t\t"
+                    + "\tMeta\tTempo Change\t\t"
                     + str(round(tempo2bpm(msg.tempo), 3))
                 )
             case "end_of_track":
-                print(str(time) + "\tEnd of Track")
+                print(str(time) + "\tMeta\tEnd of Track")
             case "sequence_number":
-                print(str(time) + "\tSequence Number\t\t" + str(msg.number))
+                print(str(time) + "\tMeta\tSequence Number\t\t" + str(msg.number))
             case "time_signature":
                 print(
                     str(time)
-                    + "\tTime Signature\t\t"
+                    + "\tMeta\tTime Signature\t\t"
                     + str(msg.numerator)
                     + "/"
                     + str(msg.denominator)
                 )
             case "key_signature":
-                print(str(time) + "\tKey Signature\t\t" + str(msg.key))
+                print(str(time) + "\tMeta\tKey Signature\t\t" + str(msg.key))
             case "channel_prefix":
-                print(str(time) + "\tChannel Prefix")
+                print(str(time) + "\tMeta\tChannel Prefix")
             case "instrument_name":
-                print(str(time) + "\tInstrument Name\t\t" + msg.name)
+                print(str(time) + "\tMeta\tInstrument Name\t\t" + msg.name)
             case "midi_port":
-                print(str(time) + "\tMidi Port\t\t" + str(msg.port))
+                print(str(time) + "\tMeta\tMidi Port\t\t" + str(msg.port))
             case "marker":
-                print(str(time) + '\tMarker\t\t\t"' + str(msg.text) + '"')
+                print(str(time) + '\tMeta\tMarker\t\t\t"' + str(msg.text) + '"')
             case "text":
-                print(str(time) + '\tText\t\t\t"' + str(msg.text) + '"')
+                print(str(time) + '\tMeta\tText\t\t\t"' + str(msg.text) + '"')
             case "smpte_offset":
                 print(
                     str(time)
-                    + "\tSMPTE Offset\t\t"
+                    + "\tMeta\tSMPTE Offset\t\t"
                     + str(f"{msg.hours:02d}")
                     + ":"
                     + str(f"{msg.minutes:02d}")
@@ -291,9 +336,15 @@ def read_msg_data(track_data: list, track_id: int):
                     + str(f"{int((msg.frames / msg.frame_rate) * 100):02d}")
                 )
             case "sysex":
-                print(str(time) + "\tSysEx Message\n\t" + str(msg.data))
+                print(
+                    str(time)
+                    + "\tMeta\tSysEx Message\n----------------"
+                    + str(msg.data)
+                )
+            case "copyright":
+                print(str(time) + '\tMeta\tCopyright\t\t"' + str(msg.text) + '"')
             case _:
-                print(str(time) + "\tUnknown Message\t\t" + str(msg))
+                print(str(time) + "\tMeta\tUnknown Message\t\t" + str(msg))
     print("\n")
 
 
