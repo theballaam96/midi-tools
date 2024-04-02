@@ -318,6 +318,7 @@ def fix_program_changes(midi: MidiFile):
 
 def clean_midi(midi_file: str):
     midi = MidiFile(midi_file)
+    print(midi_file + "\n")
     remove_empty_track(midi)
     move_tempo(midi)
     fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
