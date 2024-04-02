@@ -18,8 +18,8 @@ cc_to_name = {
     10: "Panning",
     11: "Expression",
     91: "Reverb",
-    100: "RPN - 100",
-    101: "RPN - 101",
+    100: "RPN 100",
+    101: "RPN 101",
 }
 dk64_instrument_list = [
     "N/A",
@@ -165,103 +165,168 @@ def read_msg_data(track_data: list, track_id: int):
             case "note_on":
                 print(
                     str(time)
+                    + "\tCh. "
+                    + str(msg.channel)
                     + "\tNote On\t\t\t"
                     + get_note_name(msg.note)
-                    + "\t\t"
+                    + "\t\t\t"
                     + str(msg.velocity)
                 )
             case "note_off":
-                print(str(time) + "\tNote Off\t\t" + get_note_name(msg.note))
-            case "control_change":
-                control_type = cc_to_name[msg.control]
-                match control_type:
-                    case "Reverb":
-                        print(
-                            str(time)
-                            + "\tControl Change\t\t"
-                            + str(control_type)
-                            + "   \t"
-                            + str(round(msg.value / 1.27, 2))
-                            + "%"
-                        )
-                    case "Panning":
-                        if msg.value < 64:
-                            print(
-                                str(time)
-                                + "\tControl Change\t\tPanning\t\tLeft "
-                                + str(round((-msg.value + 64) / 0.64, 2))
-                                + "%"
-                            )
-                        elif msg.value > 64:
-                            print(
-                                str(time)
-                                + "\tControl Change\t\tPanning\t\tRight "
-                                + str(round((msg.value - 64) / 0.63, 2))
-                                + "%"
-                            )
-                        else:
-                            print(str(time) + "\tControl Change\t\tPitch\t\t0")
-                    case _:
-                        print(
-                            str(time)
-                            + "\tControl Change\t\t"
-                            + str(control_type)
-                            + "   \t"
-                            + str(msg.value)
-                        )
-            case "program_change":
                 print(
                     str(time)
-                    + "\tProgram Change\t\t"
-                    + dk64_instrument_list[msg.program]
+                    + "\tCh. "
+                    + str(msg.channel)
+                    + "\tNote Off\t\t"
+                    + get_note_name(msg.note)
                 )
+            case "control_change":
+                if msg.control in cc_to_name:
+                    control_type = cc_to_name[msg.control]
+                    match control_type:
+                        case "Reverb":
+                            print(
+                                str(time)
+                                + "\tCh. "
+                                + str(msg.channel)
+                                + "\tControl Change\t\t"
+                                + str(control_type)
+                                + "   \t\t"
+                                + str(round(msg.value / 1.27, 2))
+                                + "%"
+                            )
+                        case "Panning":
+                            if msg.value < 64:
+                                print(
+                                    str(time)
+                                    + "\tCh. "
+                                    + str(msg.channel)
+                                    + "\tControl Change\t\tPanning\t\t\t"
+                                    + str(round((-msg.value + 64) / 0.64, 2))
+                                    + "% Left"
+                                )
+                            elif msg.value > 64:
+                                print(
+                                    str(time)
+                                    + "\tCh. "
+                                    + str(msg.channel)
+                                    + "\tControl Change\t\tPanning\t\t\t"
+                                    + str(round((msg.value - 64) / 0.63, 2))
+                                    + "% Right"
+                                )
+                            else:
+                                print(
+                                    str(time)
+                                    + "\tCh. "
+                                    + str(msg.channel)
+                                    + "\tControl Change\t\tPanning\t\t\t0"
+                                )
+                        case _:
+                            print(
+                                str(time)
+                                + "\tCh. "
+                                + str(msg.channel)
+                                + "\tControl Change\t\t"
+                                + str(control_type)
+                                + "   \t\t"
+                                + str(msg.value)
+                            )
+                else:
+                    print(
+                        str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tControl Change\t\tCC "
+                        + str(msg.control)
+                        + " \t\t\t"
+                        + str(msg.value)
+                    )
+            case "program_change":
+                if msg.program < 94:
+                    print(
+                        str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tProgram Change\t\t"
+                        + dk64_instrument_list[msg.program]
+                    )
+                else:
+                    print(
+                        str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tProgram Change\t\tN/A"
+                    )
             case "pitchwheel":
                 if msg.pitch < 0:
                     print(
                         str(time)
-                        + "\tControl Change\t\tPitch\t       -"
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tControl Change\t\tPitch\t\t       -"
                         + str(round((-msg.pitch) / 4096, 2))
                         + " ST"
                     )
                 elif msg.pitch > 0:
                     print(
                         str(time)
-                        + "\tControl Change\t\tPitch\t       +"
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tControl Change\t\tPitch\t\t       +"
                         + str(round((msg.pitch) / 4095.5, 2))
                         + " ST"
                     )
                 else:
-                    print(str(time) + "\tControl Change\t\tPitch\t\t0 ST")
+                    print(
+                        str(time)
+                        + "\tCh. "
+                        + str(msg.channel)
+                        + "\tControl Change\t\tPitch\t\t\t0 ST"
+                    )
+            case "aftertouch":
+                print(
+                    str(time)
+                    + "\tCh. "
+                    + str(msg.channel)
+                    + "\tControl Change\t\tAftertouch\t\t"
+                    + str(msg.value)
+                )
             case "track_name":
-                print(str(time) + "\tTrack Name\t\t" + msg.name)
+                print(str(time) + "\tMeta\tTrack Name\t\t" + msg.name)
             case "set_tempo":
                 print(
                     str(time)
-                    + "\tTempo Change\t\t"
+                    + "\tMeta\tTempo Change\t\t"
                     + str(round(tempo2bpm(msg.tempo), 3))
                 )
             case "end_of_track":
-                print(str(time) + "\tEnd of Track")
+                print(str(time) + "\tMeta\tEnd of Track")
             case "sequence_number":
-                print(str(time) + "\tSequence Number\t\t" + str(msg.number))
+                print(str(time) + "\tMeta\tSequence Number\t\t" + str(msg.number))
             case "time_signature":
                 print(
                     str(time)
-                    + "\tTime Signature\t\t"
+                    + "\tMeta\tTime Signature\t\t"
                     + str(msg.numerator)
                     + "/"
                     + str(msg.denominator)
                 )
             case "key_signature":
-                print(str(time) + "\tKey Signature\t\t" + str(msg.key))
+                print(str(time) + "\tMeta\tKey Signature\t\t" + str(msg.key))
             case "channel_prefix":
-                print(str(time) + "\tChannel Prefix")
+                print(str(time) + "\tMeta\tChannel Prefix")
             case "instrument_name":
-                print(str(time) + "\tInstrument Name\t\t" + msg.name)
+                print(str(time) + "\tMeta\tInstrument Name\t\t" + msg.name)
+            case "midi_port":
+                print(str(time) + "\tMeta\tMidi Port\t\t" + str(msg.port))
+            case "marker":
+                print(str(time) + '\tMeta\tMarker\t\t\t"' + str(msg.text) + '"')
+            case "text":
+                print(str(time) + '\tMeta\tText\t\t\t"' + str(msg.text) + '"')
             case "smpte_offset":
                 print(
                     str(time)
-                    + "\tSMPTE Offset\t\t"
+                    + "\tMeta\tSMPTE Offset\t\t"
                     + str(f"{msg.hours:02d}")
                     + ":"
                     + str(f"{msg.minutes:02d}")
@@ -270,8 +335,18 @@ def read_msg_data(track_data: list, track_id: int):
                     + ":"
                     + str(f"{int((msg.frames / msg.frame_rate) * 100):02d}")
                 )
+            case "sysex":
+                print(
+                    str(time)
+                    + "\tMeta\tSysEx Message\n----------------"
+                    + str(msg.data)
+                )
+            case "copyright":
+                print(str(time) + '\tMeta\tCopyright\t\t\t"' + str(msg.text) + '"')
             case _:
-                print(str(time) + "\tUnknown Message\t\t" + str(msg))
+                print(
+                    str(time) + "\tMeta\tUnknown Message\n----------------" + str(msg)
+                )
     print("\n")
 
 
@@ -292,7 +367,7 @@ def read_single_track(midi: MidiFile, track_id):
 #
 
 
-def clean_midi(midi_file: str):
+def read_midi(midi_file: str):
     midi = MidiFile(midi_file)
     global sharp_or_flat
     sharp_or_flat = "sharp"  # 'sharp' or 'flat'
@@ -300,4 +375,4 @@ def clean_midi(midi_file: str):
     # read_single_track(midi, 16)  # Track number 1-16 or 1-18 before FL fixing
 
 
-clean_midi(filedialog.askopenfilename())
+read_midi(filedialog.askopenfilename())
