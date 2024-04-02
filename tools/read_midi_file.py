@@ -219,7 +219,7 @@ def read_msg_data(track_data: list, track_id: int):
                         + str(msg.value)
                     )
             case "program_change":
-                if msg.program < 96:
+                if msg.program < 94:
                     print(
                         str(time)
                         + "\tProgram Change\t\t"
@@ -314,7 +314,7 @@ def read_single_track(midi: MidiFile, track_id):
 #
 
 
-def clean_midi(midi_file: str):
+def read_midi(midi_file: str):
     midi = MidiFile(midi_file)
     global sharp_or_flat
     sharp_or_flat = "sharp"  # 'sharp' or 'flat'
@@ -322,4 +322,4 @@ def clean_midi(midi_file: str):
     # read_single_track(midi, 16)  # Track number 1-16 or 1-18 before FL fixing
 
 
-clean_midi(filedialog.askopenfilename())
+read_midi(filedialog.askopenfilename())
