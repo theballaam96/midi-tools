@@ -26,8 +26,22 @@ valid_CCs = {
 }
 
 
-def remove_empty_track(midi: MidiFile):
-    del midi.tracks[0]
+def remove_empty_tracks(midi: MidiFile):
+    total_tracks = len(midi.tracks)
+    track_no = 0
+    for t in range(total_tracks):
+        track = midi.tracks[track_no]
+        track_is_good = False
+        for i in range(len(track)):
+            event = track[i]
+            match event.type:
+                case "note_on" | "note_off" | "set_tempo":
+                    track_is_good = True
+                    break
+        if not track_is_good:
+            del midi.tracks[track_no]
+        else:
+            track_no += 1
 
 
 def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
@@ -192,11 +206,16 @@ def fix_program_changes(midi: MidiFile):
                 all_msg_times = []
                 current_msg_time = 0
                 patch_event_time = 0
-                prgm_has_reverb = False
                 all_msgs.clear()
                 track_messages_equal.clear()
                 track_messages_less.clear()
                 track_messages_more.clear()
+                prgm_has_volume = False
+                prgm_has_panning = False
+                prgm_has_pitch = False
+                prgm_has_reverb = False
+                previous_pitch = 0
+                previous_reverb = 0
 
                 # inividual loop for each event to classify it
                 for m in range(len(track)):
@@ -208,6 +227,12 @@ def fix_program_changes(midi: MidiFile):
 
                     if current_msg_time < filtered_program_msg_times[i]:
                         track_messages_less.append(msg)
+                        match msg.type:
+                            case "control_change":
+                                if msg.control == valid_CCs["volume"]:
+                                    previous_reverb = msg.value
+                            case "pitchwheel":
+                                previous_pitch = msg.pitch
 
                     elif current_msg_time > filtered_program_msg_times[i]:
                         track_messages_more.append(msg)
@@ -224,24 +249,36 @@ def fix_program_changes(midi: MidiFile):
                             # Save a unique value to a variable or use the default if there is none.
                             # saves time detla for all events that get scrapped on this tick for offsetting later
                             case "control_change":
+
+                                # Volume and panning are reset on patch swap, so those are compared to the default values
                                 if msg.control == valid_CCs["volume"]:
-                                    chnl_vol = msg.value
-                                    patch_event_time += msg.time
+                                    if msg.value != 127:
+                                        chnl_vol = msg.value
+                                        patch_event_time += msg.time
+                                        prgm_has_volume = True
                                 elif msg.control == valid_CCs["pan"]:
-                                    chnl_pan = msg.value
-                                    patch_event_time += msg.time
+                                    if msg.value != 64:
+                                        chnl_pan = msg.value
+                                        patch_event_time += msg.time
+                                        prgm_has_panning = True
+
+                                # Reverb and pitch do not get reset and will only change the value if it has changed
                                 elif msg.control == valid_CCs["reverb"]:
-                                    if msg.value != 0:
+                                    if msg.value != previous_reverb:
                                         chnl_verb = msg.value
                                         patch_event_time += msg.time
+                                        previous_reverb = msg.value
                                         prgm_has_reverb = True
 
                                 else:
                                     track_messages_equal.append(msg)
 
                             case "pitchwheel":
-                                chnl_pitch = msg.pitch
-                                patch_event_time += msg.time
+                                if msg.pitch != previous_pitch:
+                                    chnl_pitch = msg.pitch
+                                    patch_event_time += msg.time
+                                    previous_pitch = msg.pitch
+                                    prgm_has_pitch = True
 
                             # Save other messages like note on/off, tempo & invalid ccs.
                             case _:
@@ -259,37 +296,40 @@ def fix_program_changes(midi: MidiFile):
                         ),
                     )
 
-                    track_messages_equal.insert(
-                        1,
-                        Message(
-                            "control_change",
-                            channel=program_msg.channel,
-                            time=0,
-                            control=valid_CCs["volume"],
-                            value=chnl_vol,
-                        ),
-                    )
+                    if prgm_has_volume:
+                        track_messages_equal.insert(
+                            1,
+                            Message(
+                                "control_change",
+                                channel=program_msg.channel,
+                                time=0,
+                                control=valid_CCs["volume"],
+                                value=chnl_vol,
+                            ),
+                        )
 
-                    track_messages_equal.insert(
-                        2,
-                        Message(
-                            "control_change",
-                            channel=program_msg.channel,
-                            time=0,
-                            control=valid_CCs["pan"],
-                            value=chnl_pan,
-                        ),
-                    )
+                    if prgm_has_panning:
+                        track_messages_equal.insert(
+                            2,
+                            Message(
+                                "control_change",
+                                channel=program_msg.channel,
+                                time=0,
+                                control=valid_CCs["pan"],
+                                value=chnl_pan,
+                            ),
+                        )
 
-                    track_messages_equal.insert(
-                        3,
-                        Message(
-                            "pitchwheel",
-                            channel=program_msg.channel,
-                            time=0,
-                            pitch=chnl_pitch,
-                        ),
-                    )
+                    if prgm_has_pitch:
+                        track_messages_equal.insert(
+                            3,
+                            Message(
+                                "pitchwheel",
+                                channel=program_msg.channel,
+                                time=0,
+                                pitch=0,
+                            ),
+                        )
 
                     if prgm_has_reverb:
                         track_messages_equal.insert(
@@ -327,9 +367,9 @@ def fix_program_changes(midi: MidiFile):
 def clean_midi(midi_file: str):
     midi = MidiFile(midi_file)
     print("\n" + midi_file + "\n")
-    remove_empty_track(midi)
+    remove_empty_tracks(midi)
     move_tempo(midi)
-    fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
+    fix_pitch_and_volumes(midi, "pitch")  # pitch, volume, or both
     remove_unrecognized_messages(midi)
     fix_program_changes(midi)
     midi.save(midi_file.replace(".mid", "_adjusted.mid"))

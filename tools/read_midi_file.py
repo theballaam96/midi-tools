@@ -148,6 +148,29 @@ note_names_flat = [
 ]
 
 
+def get_pitch_range(instrument: int):
+    match instrument:
+        case 16:
+            return 5
+        case 27:
+            return 12
+        case 29:
+            return 5
+        case 41:
+            return 12
+        case 75:
+            return 8
+        case 76:
+            return 5
+        case _:
+            return 2
+
+
+def set_sharp_or_flat(sign: str):
+    global sharp_or_flat
+    sharp_or_flat = "sharp"
+
+
 def get_note_name(note: int):
     if sharp_or_flat == "flat":
         note_name = str(note_names_flat[note % 12] + str(int(note / 12)))
@@ -157,6 +180,7 @@ def get_note_name(note: int):
 
 
 def read_msg_data(track_data: list, track_id: int):
+    temp_instrument = 0
     time = 0
     for i in range(len(track_data)):
         msg = track_data[i]
@@ -242,6 +266,7 @@ def read_msg_data(track_data: list, track_id: int):
                         + str(msg.value)
                     )
             case "program_change":
+                temp_instrument = msg.program
                 if msg.program < 94:
                     print(
                         str(time)
@@ -264,7 +289,13 @@ def read_msg_data(track_data: list, track_id: int):
                         + "\tCh. "
                         + str(msg.channel)
                         + "\tControl Change\t\tPitch\t\t       -"
-                        + str(round((-msg.pitch) / 4096, 2))
+                        + str(
+                            round(
+                                ((-msg.pitch) / 8192)
+                                * get_pitch_range(temp_instrument),
+                                2,
+                            )
+                        )
                         + " ST"
                     )
                 elif msg.pitch > 0:
@@ -273,7 +304,12 @@ def read_msg_data(track_data: list, track_id: int):
                         + "\tCh. "
                         + str(msg.channel)
                         + "\tControl Change\t\tPitch\t\t       +"
-                        + str(round((msg.pitch) / 4095.5, 2))
+                        + str(
+                            round(
+                                ((msg.pitch) / 8191) * get_pitch_range(temp_instrument),
+                                2,
+                            )
+                        )
                         + " ST"
                     )
                 else:
@@ -347,7 +383,7 @@ def read_msg_data(track_data: list, track_id: int):
                 print(
                     str(time) + "\tMeta\tUnknown Message\n----------------" + str(msg)
                 )
-    print("\n")
+    print("\n" + str(len(track_data)) + " events\n")
 
 
 def read_midi_data(midi: MidiFile):
@@ -369,10 +405,9 @@ def read_single_track(midi: MidiFile, track_id):
 
 def read_midi(midi_file: str):
     midi = MidiFile(midi_file)
-    global sharp_or_flat
-    sharp_or_flat = "sharp"  # 'sharp' or 'flat'
+    set_sharp_or_flat("sharp")  # 'sharp' or 'flat'
     read_midi_data(midi)
-    # read_single_track(midi, 16)  # Track number 1-16 or 1-18 before FL fixing
+    # read_single_track(midi, 1)  # Track number 1-16 or 1-18 before FL fixing
 
 
 read_midi(filedialog.askopenfilename())
