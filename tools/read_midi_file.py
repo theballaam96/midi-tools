@@ -147,8 +147,6 @@ note_names_flat = [
     "B",
 ]
 
-temp_instrument = int
-
 
 def get_pitch_range(instrument: int):
     match instrument:
@@ -182,6 +180,7 @@ def get_note_name(note: int):
 
 
 def read_msg_data(track_data: list, track_id: int):
+    temp_instrument = 0
     time = 0
     for i in range(len(track_data)):
         msg = track_data[i]

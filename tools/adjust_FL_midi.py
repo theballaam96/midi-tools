@@ -26,8 +26,22 @@ valid_CCs = {
 }
 
 
-def remove_empty_track(midi: MidiFile):
-    del midi.tracks[0]
+def remove_empty_tracks(midi: MidiFile):
+    total_tracks = len(midi.tracks)
+    track_no = 0
+    for t in range(total_tracks):
+        track = midi.tracks[track_no]
+        track_is_good = False
+        for i in range(len(track)):
+            event = track[i]
+            match event.type:
+                case "note_on" | "note_off" | "set_tempo":
+                    track_is_good = True
+                    break
+        if not track_is_good:
+            del midi.tracks[track_no]
+        else:
+            track_no += 1
 
 
 def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
@@ -353,9 +367,9 @@ def fix_program_changes(midi: MidiFile):
 def clean_midi(midi_file: str):
     midi = MidiFile(midi_file)
     print("\n" + midi_file + "\n")
-    remove_empty_track(midi)
+    remove_empty_tracks(midi)
     move_tempo(midi)
-    fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
+    fix_pitch_and_volumes(midi, "pitch")  # pitch, volume, or both
     remove_unrecognized_messages(midi)
     fix_program_changes(midi)
     midi.save(midi_file.replace(".mid", "_adjusted.mid"))
