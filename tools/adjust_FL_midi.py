@@ -194,7 +194,7 @@ def fix_program_changes(midi: MidiFile):
                     filtered_program_msg_times.append(total_time)
                     filtered_program_msgs.append(msg)
 
-        events = len(track)
+        events_qty = len(track)
         # print("Track " + str(track_number) + " had " + str(len(track)) + " events.")
 
         if len(filtered_program_msgs) > 0:
@@ -204,6 +204,7 @@ def fix_program_changes(midi: MidiFile):
             for i in range(len(filtered_program_msgs)):
                 program_msg = filtered_program_msgs[i]
                 all_msg_times = []
+                final_msg_times = []
                 current_msg_time = 0
                 patch_event_time = 0
                 all_msgs.clear()
@@ -226,6 +227,7 @@ def fix_program_changes(midi: MidiFile):
                     msg.time = all_msg_times[m] - all_msg_times[m - 1]
 
                     if current_msg_time < filtered_program_msg_times[i]:
+                        final_msg_times.append(current_msg_time)
                         track_messages_less.append(msg)
                         match msg.type:
                             case "control_change":
@@ -235,6 +237,9 @@ def fix_program_changes(midi: MidiFile):
                                 previous_pitch = msg.pitch
 
                     elif current_msg_time > filtered_program_msg_times[i]:
+                        if msg.type == "end_of_track":
+                            msg.time = total_time - final_msg_times[-1]
+                        final_msg_times.append(current_msg_time)
                         track_messages_more.append(msg)
 
                     else:
@@ -271,6 +276,7 @@ def fix_program_changes(midi: MidiFile):
                                         prgm_has_reverb = True
 
                                 else:
+                                    final_msg_times.append(current_msg_time)
                                     track_messages_equal.append(msg)
 
                             case "pitchwheel":
@@ -280,8 +286,14 @@ def fix_program_changes(midi: MidiFile):
                                     previous_pitch = msg.pitch
                                     prgm_has_pitch = True
 
+                            # for the end of the track's time to be preserved
+                            case "end_of_track":
+                                msg.time = total_time - final_msg_times[-1]
+                                track_messages_equal.append(msg)
+
                             # Save other messages like note on/off, tempo & invalid ccs.
                             case _:
+                                final_msg_times.append(current_msg_time)
                                 track_messages_equal.append(msg)
 
                 # Once all values have been logged, delete all patch related events on that tick and just make a new one with the saved values.
@@ -353,9 +365,9 @@ def fix_program_changes(midi: MidiFile):
             print(
                 str(track_number)
                 + "\t"
-                + str(events)
+                + str(events_qty)
                 + "\t\t"
-                + str(len(track) - events)
+                + str(len(track) - events_qty)
                 + "\t\t"
                 + str(len(track))
             )
