@@ -194,7 +194,7 @@ def fix_program_changes(midi: MidiFile):
                     filtered_program_msg_times.append(total_time)
                     filtered_program_msgs.append(msg)
 
-        events = len(track)
+        events_qty = len(track)
         # print("Track " + str(track_number) + " had " + str(len(track)) + " events.")
 
         if len(filtered_program_msgs) > 0:
@@ -280,6 +280,11 @@ def fix_program_changes(midi: MidiFile):
                                     previous_pitch = msg.pitch
                                     prgm_has_pitch = True
 
+                            # for the end of the track's time to be preserved
+                            case "end_of_track":
+                                msg.time = total_time - track_messages_less[-1].time
+                                track_messages_equal.append(msg)
+
                             # Save other messages like note on/off, tempo & invalid ccs.
                             case _:
                                 track_messages_equal.append(msg)
@@ -353,9 +358,9 @@ def fix_program_changes(midi: MidiFile):
             print(
                 str(track_number)
                 + "\t"
-                + str(events)
+                + str(events_qty)
                 + "\t\t"
-                + str(len(track) - events)
+                + str(len(track) - events_qty)
                 + "\t\t"
                 + str(len(track))
             )
