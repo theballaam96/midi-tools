@@ -257,21 +257,21 @@ def fix_program_changes(midi: MidiFile):
 
                                 # Volume and panning are reset on patch swap, so those are compared to the default values
                                 if msg.control == valid_CCs["volume"]:
+                                    patch_event_time += msg.time
                                     if msg.value != 127:
                                         chnl_vol = msg.value
-                                        patch_event_time += msg.time
                                         prgm_has_volume = True
                                 elif msg.control == valid_CCs["pan"]:
+                                    patch_event_time += msg.time
                                     if msg.value != 64:
                                         chnl_pan = msg.value
-                                        patch_event_time += msg.time
                                         prgm_has_panning = True
 
                                 # Reverb and pitch do not get reset and will only change the value if it has changed
                                 elif msg.control == valid_CCs["reverb"]:
+                                    patch_event_time += msg.time
                                     if msg.value != previous_reverb:
                                         chnl_verb = msg.value
-                                        patch_event_time += msg.time
                                         previous_reverb = msg.value
                                         prgm_has_reverb = True
 
@@ -280,9 +280,9 @@ def fix_program_changes(midi: MidiFile):
                                     track_messages_equal.append(msg)
 
                             case "pitchwheel":
+                                patch_event_time += msg.time
                                 if msg.pitch != previous_pitch:
                                     chnl_pitch = msg.pitch
-                                    patch_event_time += msg.time
                                     previous_pitch = msg.pitch
                                     prgm_has_pitch = True
 
