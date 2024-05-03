@@ -1,4 +1,6 @@
 """
+Version 0.8
+
 This script does the following:
 - Removes the empty track FL creates and merges the tempo track with another track, allowing 16 channels to be used.
 - Multiplies all pitch values by 6 so they sound the same as in FL
@@ -339,7 +341,7 @@ def fix_program_changes(midi: MidiFile):
                                 "pitchwheel",
                                 channel=program_msg.channel,
                                 time=0,
-                                pitch=0,
+                                pitch=chnl_pitch,
                             ),
                         )
 
@@ -381,7 +383,7 @@ def clean_midi(midi_file: str):
     print("\n" + midi_file + "\n")
     remove_empty_tracks(midi)
     move_tempo(midi)
-    fix_pitch_and_volumes(midi, "pitch")  # pitch, volume, or both
+    fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
     remove_unrecognized_messages(midi)
     fix_program_changes(midi)
     midi.save(midi_file.replace(".mid", "_adjusted.mid"))
