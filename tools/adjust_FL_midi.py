@@ -219,6 +219,7 @@ def fix_program_changes(midi: MidiFile):
                 prgm_has_reverb = False
                 previous_pitch = 0
                 previous_reverb = 0
+                chnl_vol = 127
 
                 # inividual loop for each event to classify it
                 for m in range(len(track)):
@@ -260,9 +261,7 @@ def fix_program_changes(midi: MidiFile):
                                 # Volume and panning are reset on patch swap, so those are compared to the default values
                                 if msg.control == valid_CCs["volume"]:
                                     patch_event_time += msg.time
-                                    if msg.value != 127:
-                                        chnl_vol = msg.value
-                                        prgm_has_volume = True
+                                    chnl_vol = msg.value
                                 elif msg.control == valid_CCs["pan"]:
                                     patch_event_time += msg.time
                                     if msg.value != 64:
@@ -310,17 +309,16 @@ def fix_program_changes(midi: MidiFile):
                         ),
                     )
 
-                    if prgm_has_volume:
-                        track_messages_equal.insert(
-                            1,
-                            Message(
-                                "control_change",
-                                channel=program_msg.channel,
-                                time=0,
-                                control=valid_CCs["volume"],
-                                value=chnl_vol,
-                            ),
-                        )
+                    track_messages_equal.insert(
+                        1,
+                        Message(
+                            "control_change",
+                            channel=program_msg.channel,
+                            time=0,
+                            control=valid_CCs["volume"],
+                            value=chnl_vol,
+                        ),
+                    )
 
                     if prgm_has_panning:
                         track_messages_equal.insert(
