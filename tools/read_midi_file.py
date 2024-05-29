@@ -1,5 +1,8 @@
-# This script reads midi data back out to you
+"""
+Version 0.8
 
+This script reads midi data back out to you
+"""
 
 from mido import MidiFile
 from mido import MidiTrack
@@ -408,6 +411,7 @@ def read_midi(midi_file: str):
     set_sharp_or_flat("sharp")  # 'sharp' or 'flat'
     read_midi_data(midi)
     # read_single_track(midi, 1)  # Track number 1-16 or 1-18 before FL fixing
+    input("Press enter to close...")
 
 
 read_midi(filedialog.askopenfilename())
