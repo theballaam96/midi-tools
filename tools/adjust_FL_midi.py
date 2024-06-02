@@ -1,11 +1,11 @@
 """
-Version 0.9
+Version 0.9.1
 
 This script does the following:
-- Removes the empty track FL creates and merges the tempo track with another track, allowing 16 channels to be used.
+- Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
 - Multiplies all pitch values by 6 so they sound the same as in FL
 - Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
-  - this probably needs more fine tuning
+  - The max volume of FL has to be adjusted by the user to compensate for DK64's max volume.
 - Removes unrecognized MIDI events
 - Deletes duplicate patch events caused by fl
   - This also condenses the subsequent events on the same tick caused by patch changes.
@@ -234,8 +234,10 @@ def fix_program_changes(midi: MidiFile):
                         track_messages_less.append(msg)
                         match msg.type:
                             case "control_change":
-                                if msg.control == valid_CCs["volume"]:
+                                if msg.control == valid_CCs["reverb"]:
                                     previous_reverb = msg.value
+                                if msg.control == valid_CCs["volume"]:
+                                    chnl_vol = msg.value
                             case "pitchwheel":
                                 previous_pitch = msg.pitch
 
