@@ -1,15 +1,17 @@
 """
-Version 0.9.1
+Version 1.0.0
 
 This script does the following:
 - Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
 - Multiplies all pitch values by 6 so they sound the same as in FL
+  - or alternativly multiplies to the proper instrument bend range. (see dk64_data.py for instrument ranges)
 - Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
   - The max volume of FL has to be adjusted by the user to compensate for DK64's max volume.
 - Removes unrecognized MIDI events
 - Deletes duplicate patch events caused by fl
   - This also condenses the subsequent events on the same tick caused by patch changes.
   - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
+- Calls the overlap detector at the end, for convenience.
 """
 
 from mido import MidiFile
@@ -17,6 +19,12 @@ from mido import MidiTrack
 from mido import Message
 import tkinter as tk
 from tkinter import filedialog
+
+import small_libs.dk64_data as dk64data
+import small_libs.notes as note_names
+import fix_patch_events as patcher
+
+from overlap_detector import check_overlap
 
 root = tk.Tk()
 root.withdraw()
@@ -77,8 +85,8 @@ def move_tempo(midi: MidiFile):
     del midi.tracks[0]
 
 
-def multiply_pitch(pitch: int):
-    new_pitch = pitch * 6
+def multiply_pitch(pitch: int, bend_range=2):
+    new_pitch = int(pitch * (12 / bend_range))
     clamped_pitch = max(min(8191, new_pitch), -8192)
     return clamped_pitch
 
@@ -109,32 +117,50 @@ def get_adjusted_volume(velocity: int):
     return adjusted_velocity
 
 
-def fix_pitch_and_volumes(midi: MidiFile, todo: str):
+def adjust_events(midi: MidiFile, todo: list):
+    """
+    adjust_events does the following:
+        adjusts the panning to, partially, match fl.
+        adjusts pitch bends to the *appropriate range*
+            range can either compensate fl's midi out /6 factor (normal),
+            or adjust to the accurate instrument range (instrument)
+        adjusts volume curve to match FL, when fl's max output is adjusted.
+
+    options for this are: 'pitch-normal' or 'pitch-instrument', and 'volume'
+    """
     for track in midi.tracks:
+        instrument = 0
         for msg in track:
-            match todo:
-                case "both":
-                    match msg.type:
-                        case "pitchwheel":
-                            msg.pitch = multiply_pitch(msg.pitch)
-                        case "note_on":
-                            msg.velocity = get_adjusted_volume(msg.velocity)  ###
-                        case "control_change":
-                            if msg.control == valid_CCs["volume"]:
-                                msg.value = get_adjusted_volume(msg.value)
+            match msg.type:
+                case "program_change":
+                    instrument = msg.program
 
-                case "volume":
-                    match msg.type:
-                        case "note_on":
-                            msg.velocity = get_adjusted_volume(msg.velocity)  ###
-                        case "control_change":
-                            if msg.control == valid_CCs["volume"]:
-                                msg.value = get_adjusted_volume(msg.value)
+                case "pitchwheel":
+                    # the function simply
+                    if ("pitch-normal" in todo) & ("pitch-instrument" not in todo):
+                        msg.pitch = multiply_pitch(msg.pitch)
 
-                case "pitch":
-                    match msg.type:
-                        case "pitchwheel":
-                            msg.pitch = multiply_pitch(msg.pitch)
+                    # calls the function to return the bend range and give that to the function to use
+                    elif "pitch-instrument" in todo:
+                        msg.pitch = multiply_pitch(
+                            msg.pitch, dk64data.get_pitch_range(instrument)
+                        )
+
+                case "note_on":
+                    if "volume" in todo:
+                        msg.velocity = get_adjusted_volume(msg.velocity)
+
+                case "control_change":
+                    if msg.control == valid_CCs["volume"]:
+                        if "volume" in todo:
+                            msg.value = get_adjusted_volume(msg.value)
+
+                    """
+                    Do this later
+                    
+                    elif msg.control == valicd_CCs["panning"]:
+                        if "panning" in todo:
+                            msg.value = get_adjusted_panning()"""
 
 
 def remove_unrecognized_messages(midi: MidiFile):
@@ -166,227 +192,38 @@ def remove_unrecognized_messages(midi: MidiFile):
         track[:] = filtered_messages
 
 
-# Below, unsegmented, function by GlitchGlider! :3
-# I'll clean it up and segment it at some point...
-
-
-def fix_program_changes(midi: MidiFile):
-    track_number = 0
-
-    print("Track #\tPrev. Events\tDifference\tCurrent Events")
-
-    for track in midi.tracks:
-        track_number += 1
-        filtered_program_msg_times = []
-        all_msgs = []
-        filtered_program_msgs = []
-        track_messages_less = []
-        track_messages_equal = []
-        track_messages_more = []
-        current_msg_time = 0
-        patch_event_time = 0
-        total_time = 0
-
-        # Scan for all program change events and document their time/exact tick, not documenting duplicates.
-        for i in range(len(track)):
-            msg = track[i]
-            total_time += msg.time
-            if msg.type == "program_change":
-                if total_time not in filtered_program_msg_times:
-                    filtered_program_msg_times.append(total_time)
-                    filtered_program_msgs.append(msg)
-
-        events_qty = len(track)
-        # print("Track " + str(track_number) + " had " + str(len(track)) + " events.")
-
-        if len(filtered_program_msgs) > 0:
-            # Scan tick for all pan, pitch, & vol events in individual loops.
-
-            # loop for each program event to filter everything before and after
-            for i in range(len(filtered_program_msgs)):
-                program_msg = filtered_program_msgs[i]
-                all_msg_times = []
-                final_msg_times = []
-                current_msg_time = 0
-                patch_event_time = 0
-                all_msgs.clear()
-                track_messages_equal.clear()
-                track_messages_less.clear()
-                track_messages_more.clear()
-                prgm_has_volume = False
-                prgm_has_panning = False
-                prgm_has_pitch = False
-                prgm_has_reverb = False
-                previous_pitch = 0
-                previous_reverb = 0
-                chnl_vol = 127
-
-                # inividual loop for each event to classify it
-                for m in range(len(track)):
-                    msg = track[m]
-                    all_msgs.append(msg)
-                    current_msg_time += msg.time
-                    all_msg_times.append(current_msg_time)
-                    msg.time = all_msg_times[m] - all_msg_times[m - 1]
-
-                    if current_msg_time < filtered_program_msg_times[i]:
-                        final_msg_times.append(current_msg_time)
-                        track_messages_less.append(msg)
-                        match msg.type:
-                            case "control_change":
-                                if msg.control == valid_CCs["reverb"]:
-                                    previous_reverb = msg.value
-                                if msg.control == valid_CCs["volume"]:
-                                    chnl_vol = msg.value
-                            case "pitchwheel":
-                                previous_pitch = msg.pitch
-
-                    elif current_msg_time > filtered_program_msg_times[i]:
-                        if msg.type == "end_of_track":
-                            msg.time = total_time - final_msg_times[-1]
-                        final_msg_times.append(current_msg_time)
-                        track_messages_more.append(msg)
-
-                    else:
-                        match msg.type:
-
-                            # Save the patch value
-                            case "program_change":
-                                program_instrument = msg.program
-                                patch_event_time += msg.time
-
-                            # Compare every event to the default value of that event and discard defaults.
-                            # Save a unique value to a variable or use the default if there is none.
-                            # saves time detla for all events that get scrapped on this tick for offsetting later
-                            case "control_change":
-
-                                # Volume and panning are reset on patch swap, so those are compared to the default values
-                                if msg.control == valid_CCs["volume"]:
-                                    patch_event_time += msg.time
-                                    chnl_vol = msg.value
-                                elif msg.control == valid_CCs["pan"]:
-                                    patch_event_time += msg.time
-                                    if msg.value != 64:
-                                        chnl_pan = msg.value
-                                        prgm_has_panning = True
-
-                                # Reverb and pitch do not get reset and will only change the value if it has changed
-                                elif msg.control == valid_CCs["reverb"]:
-                                    patch_event_time += msg.time
-                                    if msg.value != previous_reverb:
-                                        chnl_verb = msg.value
-                                        previous_reverb = msg.value
-                                        prgm_has_reverb = True
-
-                                else:
-                                    final_msg_times.append(current_msg_time)
-                                    track_messages_equal.append(msg)
-
-                            case "pitchwheel":
-                                patch_event_time += msg.time
-                                if msg.pitch != previous_pitch:
-                                    chnl_pitch = msg.pitch
-                                    previous_pitch = msg.pitch
-                                    prgm_has_pitch = True
-
-                            # for the end of the track's time to be preserved
-                            case "end_of_track":
-                                msg.time = total_time - final_msg_times[-1]
-                                track_messages_equal.append(msg)
-
-                            # Save other messages like note on/off, tempo & invalid ccs.
-                            case _:
-                                final_msg_times.append(current_msg_time)
-                                track_messages_equal.append(msg)
-
-                # Once all values have been logged, delete all patch related events on that tick and just make a new one with the saved values.
-                if filtered_program_msg_times[i] != total_time:
-                    track_messages_equal.insert(
-                        0,
-                        Message(
-                            "program_change",
-                            channel=program_msg.channel,
-                            time=patch_event_time,
-                            program=program_instrument,
-                        ),
-                    )
-
-                    track_messages_equal.insert(
-                        1,
-                        Message(
-                            "control_change",
-                            channel=program_msg.channel,
-                            time=0,
-                            control=valid_CCs["volume"],
-                            value=chnl_vol,
-                        ),
-                    )
-
-                    if prgm_has_panning:
-                        track_messages_equal.insert(
-                            2,
-                            Message(
-                                "control_change",
-                                channel=program_msg.channel,
-                                time=0,
-                                control=valid_CCs["pan"],
-                                value=chnl_pan,
-                            ),
-                        )
-
-                    if prgm_has_pitch:
-                        track_messages_equal.insert(
-                            3,
-                            Message(
-                                "pitchwheel",
-                                channel=program_msg.channel,
-                                time=0,
-                                pitch=chnl_pitch,
-                            ),
-                        )
-
-                    if prgm_has_reverb:
-                        track_messages_equal.insert(
-                            4,
-                            Message(
-                                "control_change",
-                                channel=program_msg.channel,
-                                time=0,
-                                control=valid_CCs["reverb"],
-                                value=chnl_verb,
-                            ),
-                        )
-
-                # appends event lists to the track
-                all_msgs.clear()
-                all_msgs = (
-                    track_messages_less + track_messages_equal + track_messages_more
-                )
-                track[:] = all_msgs
-
-            print(
-                str(track_number)
-                + "\t"
-                + str(events_qty)
-                + "\t\t"
-                + str(len(track) - events_qty)
-                + "\t\t"
-                + str(len(track))
-            )
-        else:
-            print(str(track_number) + "\tEmpty Track")
-    print("")
+#
 
 
 def clean_midi(midi_file: str):
+
     midi = MidiFile(midi_file)
     print("\n" + midi_file + "\n")
+
     remove_empty_tracks(midi)
     move_tempo(midi)
-    fix_pitch_and_volumes(midi, "both")  # pitch, volume, or both
+
+    """
+    adjust_events does the following:
+        adjusts the panning to, partially, match fl.
+        adjusts pitch bends to the *appropriate range*
+            range can either compensate fl's midi out /6 factor (normal),
+            or adjust to the accurate instrument range (instrument)
+        adjusts volume curve to match FL, when fl's max output is adjusted.
+
+    options for this are: 'pitch-normal' or 'pitch-instrument', and 'volume' """
+    adjust_events(midi, ["pitch-normal", "volume"])
     remove_unrecognized_messages(midi)
-    fix_program_changes(midi)
+
+    patcher.fix_program_changes(midi)
+
+    # sets note names names to 'sharp' or 'flat', then checks for overlapping notes
+    note_names.set_sharp_or_flat("sharp")
+    check_overlap(midi, True)
+
+    # saves file with '_adjusted' added to the filename
     midi.save(midi_file.replace(".mid", "_adjusted.mid"))
 
 
-clean_midi(filedialog.askopenfilename())
+if __name__ == "__main__":
+    clean_midi(filedialog.askopenfilename())
