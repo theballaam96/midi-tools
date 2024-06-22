@@ -52,7 +52,7 @@ def read_msg_data(track_data: list):
 
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                        f"{'Note Off':28s}{notes.get_note_name(msg.note):<28s}0"
+                        f"{'Note Off (Not in DK64)':28s}{notes.get_note_name(msg.note):<28s}0"
                     )
 
                 else:
