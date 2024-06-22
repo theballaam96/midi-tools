@@ -29,26 +29,50 @@ cc_to_name = {
 }
 
 
-def read_msg_data(track_data: list, track_id: int):
-    temp_instrument = 0
-    time = 0
+def read_msg_data(track_data: list):
+    """
+    reads a single MidiTrack and prints it to the console.
+    """
+
+    temp_instrument = 0  # the numerical value of the current instrument called for calculating pitch bend ranges
+    time = 0  # true time for printing
+    active_notes = []  # active notes for detecting overlaps in this file too!
+
     for i in range(len(track_data)):
+
         msg = track_data[i]
         time += msg.time
+
         match msg.type:
             case "note_on":
                 if msg.velocity == 0:
+
+                    if msg.note in active_notes:
+                        active_notes.remove(msg.note)
+
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
                         f"{'Note Off':28s}{notes.get_note_name(msg.note):<28s}0"
                     )
+
                 else:
+                    if msg.note in active_notes:
+                        print(
+                            f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
+                            f"{'Note Overlap!':28s}{notes.get_note_name(msg.note):<28s}{msg.velocity}"
+                        )
+                    else:
+                        active_notes.append(msg.note)
+
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
                         f"{'Note On':28s}{notes.get_note_name(msg.note):<28s}{msg.velocity}"
                     )
 
             case "note_off":
+                if msg.note in active_notes:
+                    active_notes.remove(msg.note)
+
                 print(
                     f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
                     f"{'Note Off':28s}{notes.get_note_name(msg.note)}"
@@ -67,20 +91,17 @@ def read_msg_data(track_data: list, track_id: int):
                             if msg.value < 64:
                                 print(
                                     f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                                    f"{'Control Change':28s}{'Panning':28s}{round((-msg.value + 64) / 0.63, 2)}% Left"
-                                    f"\t\t{msg.value}"
+                                    f"{'Control Change':28s}{'Panning':28s}{(-msg.value + 64)}/64 Left"
                                 )
                             elif msg.value > 64:
                                 print(
                                     f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                                    f"{'Control Change':28s}{'Panning':28s}{round((msg.value - 64) / 0.63, 2)}% Right"
-                                    f"\t\t{msg.value}"
+                                    f"{'Control Change':28s}{'Panning':28s}{(msg.value - 64)}/63 Right"
                                 )
                             else:
                                 print(
                                     f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                                    f"{'Control Change':28s}{'Panning':28s}0"
-                                    f"\t\t\t{msg.value}"
+                                    f"{'Control Change':28s}{'Panning':28s}Centered"
                                 )
                         case _:
                             print(
@@ -184,21 +205,21 @@ def read_msg_data(track_data: list, track_id: int):
                     f"{time:<8d} {'Meta':<10s}Unknown Message\n{'':<9s}{'':=<10s}{msg}"
                 )
 
-    print(f"\n{len(track_data)} events\n")
+    print(f"\n{len(track_data)} events\n\n")
 
 
 def read_midi_data(midi: MidiFile):
     track_number = 0
     for track in midi.tracks:
-        print(f"= Track {track_number + 1} =\n")
-        read_msg_data(track, track_number)
+        print(f"\n= Track {track_number + 1} =\n")
+        read_msg_data(track)
         track_number += 1
 
 
 def read_single_track(midi: MidiFile, track_id):
     track_number = track_id - 1
     track = midi.tracks[track_number]
-    read_msg_data(track, track_number)
+    read_msg_data(track)
 
 
 #
