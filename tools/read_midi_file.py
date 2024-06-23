@@ -1,5 +1,5 @@
 """
-Version 0.9
+Version 1.0.0
 
 This script reads midi data back out to you
 """
