@@ -1,2 +1,6 @@
 
 *.pyc
+/tools/building/working
+*.spec
+*.exe
+/tools/building/built
