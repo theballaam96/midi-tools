@@ -1,5 +1,5 @@
 """
-Version 1.0.0
+Version 1.0.1
 
 - This script checks a MIDI file to see if there are any overlapping notes: a note on event when the last note wasn't closed.
 
