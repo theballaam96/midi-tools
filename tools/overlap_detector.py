@@ -27,6 +27,7 @@ def check_overlap(input_midi: str, sub_func: bool):
     notes = {}  # stores which note is being held when iterating through each event
     numerator = 4  # default, will be read from the file
     has_overlapping = False
+    track_name = None
 
     for original_track in input_midi.tracks:
 
@@ -43,10 +44,10 @@ def check_overlap(input_midi: str, sub_func: bool):
 
                 try:
                     del notes[msg.note]
-                except:
-                    pass
+                except Exception:
+                    print(f"Something went wrong trying to delete note at tick {absolute_ticks} in channel {current_instrument}")
 
-            else:
+            else:                    
                 match msg.type:
                     case "note_on":
                         if msg.note in notes:
@@ -56,14 +57,17 @@ def check_overlap(input_midi: str, sub_func: bool):
                             has_overlapping = True
                         notes[msg.note] = msg
 
-                    case "program_change":
-                        current_instrument = dk64data.dk64_instrument_list[msg.program]
-
-                    case "time_signature":
-                        numerator = msg.numerator
-
                     case "track_name":
                         track_name = msg.name
+                    
+                    case "program_change":
+                        current_instrument = dk64data.dk64_instrument_list[msg.program]
+                    
+                    case "time_signature":
+                        numerator = msg.numerator
+                    
+
+
 
     if has_overlapping:
         print("\nThere are overlapping notes in this file!\n")
