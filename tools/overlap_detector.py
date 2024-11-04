@@ -1,5 +1,5 @@
 """
-Version 1.0.0
+Version 1.0.1
 
 - This script checks a MIDI file to see if there are any overlapping notes: a note on event when the last note wasn't closed.
 
@@ -27,6 +27,7 @@ def check_overlap(input_midi: str, sub_func: bool):
     notes = {}  # stores which note is being held when iterating through each event
     numerator = 4  # default, will be read from the file
     has_overlapping = False
+    track_name = None
 
     for original_track in input_midi.tracks:
 
@@ -43,8 +44,8 @@ def check_overlap(input_midi: str, sub_func: bool):
 
                 try:
                     del notes[msg.note]
-                except:
-                    pass
+                except Exception:
+                    print(f"Something went wrong trying to delete note at tick {absolute_ticks} in channel {current_instrument}")
 
             else:
                 match msg.type:
