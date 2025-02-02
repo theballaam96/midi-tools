@@ -1,5 +1,5 @@
 """
-Version 1.0.0
+Version 1.1.0
 
 This script does the following:
 - Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
@@ -23,6 +23,7 @@ from tkinter import filedialog
 import small_libs.dk64_data as dk64data
 import small_libs.notes as note_names
 import fix_patch_events as patcher
+import small_libs.common as common
 
 from overlap_detector import check_overlap
 
@@ -64,8 +65,13 @@ def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
 
 
 def move_tempo(midi: MidiFile):
-    tempo_track = midi.tracks[0]
-    target_track = midi.tracks[1]
+    tempo_track = midi.tracks[common.find_tempo_track(midi)]
+    target_track = common.find_notes_track(midi)
+    if target_track == "":
+        input("ERROR: This file is empty; nowhere to place tempo...")
+        exit(1)
+    else:
+        target_track = midi.tracks[target_track]
     tempo_msgs = [msg for msg in tempo_track if msg.type == "set_tempo"]
     total_tempo_time = 0
     for tempo_msg in tempo_msgs:
@@ -226,4 +232,4 @@ def clean_midi(midi_file: str):
 
 
 if __name__ == "__main__":
-    clean_midi(filedialog.askopenfilename())
+    clean_midi(common.getMidiFile())

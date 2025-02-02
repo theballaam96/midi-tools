@@ -1,9 +1,11 @@
 import mido
 import tkinter as tk
 from tkinter import filedialog
+import small_libs.common as common
 
 root = tk.Tk()
 root.withdraw()
+
 
 def duplicate_track_channel(input_file, output_file, track_num, channel_num):
     # Load the MIDI file
@@ -15,7 +17,7 @@ def duplicate_track_channel(input_file, output_file, track_num, channel_num):
 
     for i, track in enumerate(mid.tracks):
         for msg in track:
-            if hasattr(msg, 'channel') and msg.channel in vacant_channels:
+            if hasattr(msg, "channel") and msg.channel in vacant_channels:
                 vacant_channels = [x for x in vacant_channels if x != msg.channel]
             if i == track_num:
                 duplicated_track.append(msg.copy())
@@ -29,9 +31,11 @@ def duplicate_track_channel(input_file, output_file, track_num, channel_num):
     else:
         duplicated_channel = vacant_channels[0]
 
-    print(f"Placed duplication onto Track {len(mid.tracks)}, Channel {duplicated_channel}")
+    print(
+        f"Placed duplication onto Track {len(mid.tracks)}, Channel {duplicated_channel}"
+    )
     for msg in duplicated_track:
-        if hasattr(msg, 'channel') and msg.channel == channel_num:
+        if hasattr(msg, "channel") and msg.channel == channel_num:
             msg.channel = duplicated_channel
 
     mid.tracks.append(duplicated_track)
@@ -39,8 +43,9 @@ def duplicate_track_channel(input_file, output_file, track_num, channel_num):
     # Save the new MIDI file
     mid.save(output_file)
 
+
 # Example usage
-input_file = filedialog.askopenfilename()
+input_file = common.getMidiFile()
 output_file = input_file.replace(".mid", "_duplicatedtrack.mid")
 track_num = 8  # Index of the track to duplicate
 channel_num = 6  # Channel number to duplicate

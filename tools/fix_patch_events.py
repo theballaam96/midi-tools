@@ -1,5 +1,5 @@
 """
-Version 1.0.0
+Version 1.1.0
 
 
 - Deletes duplicate patch events caused by fl
@@ -11,6 +11,7 @@ from tkinter import filedialog
 
 from mido import MidiFile
 from mido import Message
+import small_libs.common as common
 
 valid_CCs = {
     "volume": 7,
@@ -69,8 +70,6 @@ def fix_program_changes(midi: MidiFile):
                 track_messages_equal.clear()
                 track_messages_less.clear()
                 track_messages_more.clear()
-                prgm_has_volume = False
-                prgm_has_panning = False
                 prgm_has_pitch = False
                 prgm_has_reverb = False
                 previous_pitch = 0
@@ -85,6 +84,7 @@ def fix_program_changes(midi: MidiFile):
                     all_msg_times.append(current_msg_time)
                     msg.time = all_msg_times[m] - all_msg_times[m - 1]
 
+                    # events that take place before the current patch being fixed
                     if current_msg_time < filtered_program_msg_times[i]:
                         final_msg_times.append(current_msg_time)
                         track_messages_less.append(msg)
@@ -94,15 +94,19 @@ def fix_program_changes(midi: MidiFile):
                                     previous_reverb = msg.value
                                 if msg.control == valid_CCs["volume"]:
                                     chnl_vol = msg.value
+                                if msg.control == valid_CCs["pan"]:
+                                    chnl_pan = msg.value
                             case "pitchwheel":
                                 previous_pitch = msg.pitch
 
+                    # events that take place after the current patch being fixed
                     elif current_msg_time > filtered_program_msg_times[i]:
                         if msg.type == "end_of_track":
                             msg.time = total_time - final_msg_times[-1]
                         final_msg_times.append(current_msg_time)
                         track_messages_more.append(msg)
 
+                    # events that take place on the same tick the current patch being fixed
                     else:
                         match msg.type:
 
@@ -122,9 +126,7 @@ def fix_program_changes(midi: MidiFile):
                                     chnl_vol = msg.value
                                 elif msg.control == valid_CCs["pan"]:
                                     patch_event_time += msg.time
-                                    if msg.value != 64:
-                                        chnl_pan = msg.value
-                                        prgm_has_panning = True
+                                    chnl_pan = msg.value
 
                                 # Reverb and pitch do not get reset and will only change the value if it has changed
                                 elif msg.control == valid_CCs["reverb"]:
@@ -135,6 +137,8 @@ def fix_program_changes(midi: MidiFile):
                                         prgm_has_reverb = True
 
                                 else:
+                                    patch_event_time += msg.time
+                                    msg.time = 0
                                     final_msg_times.append(current_msg_time)
                                     track_messages_equal.append(msg)
 
@@ -152,6 +156,8 @@ def fix_program_changes(midi: MidiFile):
 
                             # Save other messages like note on/off, tempo & invalid ccs.
                             case _:
+                                patch_event_time += msg.time
+                                msg.time = 0
                                 final_msg_times.append(current_msg_time)
                                 track_messages_equal.append(msg)
 
@@ -178,7 +184,7 @@ def fix_program_changes(midi: MidiFile):
                         ),
                     )
 
-                    if prgm_has_panning:
+                    if chnl_pan != 64:
                         track_messages_equal.insert(
                             2,
                             Message(
@@ -238,4 +244,4 @@ def main(midi_file: str):
 
 
 if __name__ == "__main__":
-    main(filedialog.askopenfilename())
+    main(common.getMidiFile())

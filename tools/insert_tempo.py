@@ -1,12 +1,15 @@
 from mido import MidiFile, MetaMessage
 import tkinter as tk
 from tkinter import filedialog
+import small_libs.common as common
 
 root = tk.Tk()
 root.withdraw()
 
+
 def insert_tempo(midi: MidiFile):
-        midi.tracks[0].insert(0, MetaMessage('set_tempo'))
+    midi.tracks[0].insert(0, MetaMessage("set_tempo"))
+
 
 def clean_midi(midi_file: str):
     midi = MidiFile(midi_file)
@@ -15,5 +18,5 @@ def clean_midi(midi_file: str):
     midi.save(midi_file.replace(".mid", "_tinserted.mid"))
 
 
-clean_midi(filedialog.askopenfilename())
-input("Press the Enter key to continue: ") 
+clean_midi(common.getMidiFile())
+input("Press the Enter key to continue: ")
