@@ -1,5 +1,5 @@
 """
-Version 1.0.1
+Version 1.1.0
 
 - This script checks a MIDI file to see if there are any overlapping notes: a note on event when the last note wasn't closed.
 
@@ -12,6 +12,7 @@ from tkinter import filedialog
 
 import small_libs.dk64_data as dk64data
 import small_libs.notes as note_names
+import small_libs.common as common
 
 root = tk.Tk()
 root.withdraw()
@@ -45,7 +46,9 @@ def check_overlap(input_midi: str, sub_func: bool):
                 try:
                     del notes[msg.note]
                 except Exception:
-                    print(f"Something went wrong trying to delete note at tick {absolute_ticks} in channel {current_instrument}")
+                    print(
+                        f"Something went wrong trying to delete note at tick {absolute_ticks} in channel {current_instrument}"
+                    )
 
             else:
                 match msg.type:
@@ -58,7 +61,12 @@ def check_overlap(input_midi: str, sub_func: bool):
                         notes[msg.note] = msg
 
                     case "program_change":
-                        current_instrument = dk64data.dk64_instrument_list[msg.program]
+                        if msg.program >= 95:
+                            current_instrument = f"Non-DK64 Instrument: {msg.program}"
+                        else:
+                            current_instrument = dk64data.dk64_instrument_list[
+                                msg.program
+                            ]
 
                     case "time_signature":
                         numerator = msg.numerator
@@ -79,7 +87,7 @@ def check_overlap(input_midi: str, sub_func: bool):
 def main():
 
     note_names.set_sharp_or_flat("sharp")  # 'sharp' or 'flat'
-    check_overlap(MidiFile(filedialog.askopenfilename()), False)
+    check_overlap(MidiFile(common.getMidiFile()), False)
 
 
 if __name__ == "__main__":

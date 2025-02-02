@@ -1,5 +1,5 @@
 """
-Version 1.0.0
+Version 1.1.0
 
 This script reads midi data back out to you
 """
@@ -12,6 +12,7 @@ from mido import tempo2bpm
 
 import small_libs.dk64_data as dk64data
 import small_libs.notes as notes
+import small_libs.common as common
 
 root = tk.Tk()
 root.withdraw()
@@ -91,12 +92,12 @@ def read_msg_data(track_data: list):
                             if msg.value < 64:
                                 print(
                                     f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                                    f"{'Control Change':28s}{'Panning':28s}{(-msg.value + 64)}/64 Left"
+                                    f"{'Control Change':28s}{'Panning':28s}{(-msg.value + 64)}/64\u1D40\u1D34 Left"
                                 )
                             elif msg.value > 64:
                                 print(
                                     f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                                    f"{'Control Change':28s}{'Panning':28s}{(msg.value - 64)}/63 Right"
+                                    f"{'Control Change':28s}{'Panning':28s}{(msg.value - 64)}/63\u1D40\u1D34 Right"
                                 )
                             else:
                                 print(
@@ -116,7 +117,7 @@ def read_msg_data(track_data: list):
 
             case "program_change":
                 temp_instrument = msg.program
-                if msg.program < 94:
+                if msg.program < 95:
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
                         f"{'Program Change':28s}{dk64data.dk64_instrument_list[msg.program]:28s}{msg.program}"
@@ -233,4 +234,5 @@ def read_midi(midi_file: str):
     input("Press enter to close...")
 
 
-read_midi(filedialog.askopenfilename())
+if __name__ == "__main__":
+    read_midi(common.getMidiFile())
