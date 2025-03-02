@@ -1,5 +1,5 @@
 """
-Version 1.1.0
+Version 1.1.1
 
 This script does the following:
 - Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.

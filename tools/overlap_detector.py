@@ -1,5 +1,5 @@
 """
-Version 1.1.0
+Version 1.1.1
 
 - This script checks a MIDI file to see if there are any overlapping notes: a note on event when the last note wasn't closed.
 
@@ -25,7 +25,9 @@ def check_overlap(input_midi: str, sub_func: bool):
     sub_func is a combo bool for usage of this function in another file without extra printing, pausing, ect.
     """
 
-    notes = {}  # stores which note is being held when iterating through each event
+    active_notes = (
+        []
+    )  # stores which note is being held when iterating through each event
     numerator = 4  # default, will be read from the file
     has_overlapping = False
     track_name = None
@@ -39,26 +41,22 @@ def check_overlap(input_midi: str, sub_func: bool):
 
             absolute_ticks += msg.time
 
-            if (msg.type == "note_off") or (
-                msg.type == "note_on" and msg.velocity == 0
-            ):
-
-                try:
-                    del notes[msg.note]
-                except Exception:
-                    print(
-                        f"Something went wrong trying to delete note at tick {absolute_ticks} in channel {current_instrument}"
-                    )
+            if (
+                (msg.type == "note_off")
+                or (msg.type == "note_on" and msg.velocity == 0)
+            ) and msg.note in active_notes:
+                active_notes.remove(msg.note)
 
             else:
                 match msg.type:
                     case "note_on":
-                        if msg.note in notes:
+                        if msg.note in active_notes:
                             print(
                                 f'Overlapping note!{"":9s}{note_names.get_note_name(msg.note):11s}Bar: {round(absolute_ticks / input_midi.ticks_per_beat / numerator + 1, 2):>6.2f}{"":9s}Tick: {absolute_ticks:>6d}{"":9s}Channel {msg.channel:<2d}{"":9s}"{track_name}" : {current_instrument}'
                             )
                             has_overlapping = True
-                        notes[msg.note] = msg
+                        else:
+                            active_notes.append(msg.note)
 
                     case "program_change":
                         if msg.program >= 95:
