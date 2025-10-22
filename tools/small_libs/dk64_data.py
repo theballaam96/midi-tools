@@ -2,6 +2,8 @@
 Separated out dk64 music related data for quick reference in other files / future files
 """
 
+max_voices = 22
+
 
 def get_pitch_range(instrument: int):
     """

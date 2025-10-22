@@ -1,5 +1,5 @@
 """
-Version 1.1.1
+Version 1.1.2
 
 
 - Deletes duplicate patch events caused by fl
@@ -75,6 +75,7 @@ def fix_program_changes(midi: MidiFile):
                 previous_pitch = 0
                 previous_reverb = 0
                 chnl_vol = 127
+                chnl_pan = 64
 
                 # inividual loop for each event to classify it
                 for m in range(len(track)):
