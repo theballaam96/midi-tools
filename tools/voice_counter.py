@@ -17,6 +17,19 @@ root = tk.Tk()
 root.withdraw()
 
 
+cc_to_name = {
+    1: "Mod Wheel",
+    5: "Portamento",
+    6: "Data Entry",
+    7: "Volume",
+    10: "Panning",
+    11: "Expression",
+    91: "Reverb",
+    100: "RPN 100",
+    101: "RPN 101",
+}
+
+
 # process MIDI messages
 def check_voices(input_midi: str, sub_func: bool):
     """
@@ -37,16 +50,23 @@ def check_voices(input_midi: str, sub_func: bool):
 
         absolute_ticks = 0  # contains the current time when processing each event
         instrument = 0
+        reverb = False
 
         for msg in original_track:
 
             absolute_ticks += msg.time
 
             if msg.type == "note_off":
+
                 note_release_ticks = round(
                     (dk64data.get_instrument_release(instrument) / tempo)
                     * input_midi.ticks_per_beat
                 )
+                if reverb:
+                    note_release_ticks = round(
+                        (dk64data.reverb_tail / tempo) * input_midi.ticks_per_beat
+                    )
+
                 if (absolute_ticks + note_release_ticks) in note_events:
                     note_events[absolute_ticks + note_release_ticks] -= 1
                 else:
@@ -66,6 +86,10 @@ def check_voices(input_midi: str, sub_func: bool):
 
             elif msg.type == "set_tempo":
                 tempo = msg.tempo
+
+            elif msg.type == "control_change":
+                if cc_to_name[msg.control] == "Reverb" and msg.value > 0:
+                    reverb = True
 
     all_times = sorted(note_events)
     for time in all_times:

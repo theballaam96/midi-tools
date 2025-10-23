@@ -3,6 +3,10 @@ Separated out dk64 music related data for quick reference in other files / futur
 """
 
 max_voices = 44
+"""max voices dk64 can play at once"""
+
+reverb_tail = 2334000
+"""length of reverb tail in microseconds"""
 
 
 def get_instrument_release(instrument: int):
