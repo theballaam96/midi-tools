@@ -1,5 +1,5 @@
 """
-Version 1.0.0
+Version 1.0.1
 
 - This script checks a MIDI file to see if there are any instances if too many notes playing at once, breakingDK64's engine.
 """
