@@ -2,6 +2,24 @@
 Separated out dk64 music related data for quick reference in other files / future files
 """
 
+max_voices = 44
+
+
+def get_instrument_release(instrument: int):
+    """
+    returns the release time of an instrument in microseconds
+    """
+    match instrument:
+        # String Sustain
+        case 18:
+            return 350000
+        # Theremin
+        case 27:
+            return 350000
+        # All other instruments
+        case _:
+            return 0
+
 
 def get_pitch_range(instrument: int):
     """

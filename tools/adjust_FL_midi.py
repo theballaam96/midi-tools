@@ -1,5 +1,5 @@
 """
-Version 1.1.0
+Version 1.1.3
 
 This script does the following:
 - Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
@@ -26,6 +26,7 @@ import fix_patch_events as patcher
 import small_libs.common as common
 
 from overlap_detector import check_overlap
+from voice_counter import check_voices
 
 root = tk.Tk()
 root.withdraw()
@@ -226,6 +227,7 @@ def clean_midi(midi_file: str):
     # sets note names names to 'sharp' or 'flat', then checks for overlapping notes
     note_names.set_sharp_or_flat("sharp")
     check_overlap(midi, True)
+    check_voices(midi, True)
 
     # saves file with '_adjusted' added to the filename
     midi.save(midi_file.replace(".mid", "_adjusted.mid"))
