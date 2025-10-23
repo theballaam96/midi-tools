@@ -1,5 +1,5 @@
 """
-Version 1.1.3
+Version 1.1.4
 
 This script does the following:
 - Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
@@ -219,7 +219,7 @@ def clean_midi(midi_file: str):
         adjusts volume curve to match FL, when fl's max output is adjusted.
 
     options for this are: 'pitch-normal' or 'pitch-instrument', and 'volume' """
-    adjust_events(midi, ["pitch-normal", "volume"])
+    adjust_events(midi, ["pitch-instrument", "volume"])
     remove_unrecognized_messages(midi)
 
     patcher.fix_program_changes(midi)
