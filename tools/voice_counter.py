@@ -28,34 +28,44 @@ def check_voices(input_midi: str, sub_func: bool):
     active_voices = 0  # stores how many voices there are.
     note_events = {}  # stores all note on/off events as a tick_time:incremental
     peak_voices = 0
+    note_release_ticks = 0
+    tempo = 0
 
     numerator = 4  # default, will be read from the file
 
     for original_track in input_midi.tracks:
 
         absolute_ticks = 0  # contains the current time when processing each event
+        instrument = 0
 
         for msg in original_track:
 
             absolute_ticks += msg.time
 
-            if (msg.type == "note_off") or (
-                msg.type == "note_on" and msg.velocity == 0
-            ):
-                if absolute_ticks in note_events:
-                    note_events[absolute_ticks] -= 1
+            if msg.type == "note_off":
+                note_release_ticks = round(
+                    (dk64data.get_instrument_release(instrument) / tempo)
+                    * input_midi.ticks_per_beat
+                )
+                if (absolute_ticks + note_release_ticks) in note_events:
+                    note_events[absolute_ticks + note_release_ticks] -= 1
                 else:
-                    note_events[absolute_ticks] = -1
+                    note_events[absolute_ticks + note_release_ticks] = -1
 
-            else:
-                if msg.type == "note_on":
-                    if absolute_ticks in note_events:
-                        note_events[absolute_ticks] += 1
-                    else:
-                        note_events[absolute_ticks] = 1
+            elif msg.type == "note_on":
+                if absolute_ticks in note_events:
+                    note_events[absolute_ticks] += 1
+                else:
+                    note_events[absolute_ticks] = 1
 
-                if msg.type == "time_signature":
-                    numerator = msg.numerator
+            elif msg.type == "time_signature":
+                numerator = msg.numerator
+
+            elif msg.type == "program_change":
+                instrument = msg.program
+
+            elif msg.type == "set_tempo":
+                tempo = msg.tempo
 
     all_times = sorted(note_events)
     for time in all_times:
