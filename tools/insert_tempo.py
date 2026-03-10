@@ -1,5 +1,5 @@
 """
-Version 1.0.0
+Version 1.0.1
 
 - This script simply inserts a set_tempo event into a MIDI file.
 """

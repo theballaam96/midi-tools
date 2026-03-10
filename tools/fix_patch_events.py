@@ -1,5 +1,5 @@
 """
-Version 1.1.2
+Version 1.1.3
 
 - Deletes duplicate patch events caused by FL.
   - This also condenses the subsequent events on the same tick caused by patch changes.
