@@ -1,21 +1,15 @@
 """
-Version 1.1.0
+Version 1.1.1
 
 This script reads midi data back out to you
 """
 
-from mido import MidiFile
-from mido import MidiTrack
-import tkinter as tk
-from tkinter import filedialog
-from mido import tempo2bpm
+from mido import MidiFile, tempo2bpm
 
-import small_libs.dk64_data as dk64data
-import small_libs.notes as notes
-import small_libs.common as common
+from small_libs.dk64_data import DK64_INSTRUMENT_LIST, get_pitch_range
+from small_libs.notes import set_sharp_or_flat, get_note_name
+from small_libs.common import getMidiFile
 
-root = tk.Tk()
-root.withdraw()
 
 cc_to_name = {
     1: "Mod Wheel",
@@ -53,21 +47,21 @@ def read_msg_data(track_data: list):
 
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                        f"{'Note Off (Not in DK64)':28s}{notes.get_note_name(msg.note):<28s}0"
+                        f"{'Note Off (Not in DK64)':28s}{get_note_name(msg.note):<28s}0"
                     )
 
                 else:
                     if msg.note in active_notes:
                         print(
                             f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                            f"{'Note Overlap!':28s}{notes.get_note_name(msg.note):<28s}{msg.velocity}"
+                            f"{'Note Overlap!':28s}{get_note_name(msg.note):<28s}{msg.velocity}"
                         )
                     else:
                         active_notes.append(msg.note)
 
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                        f"{'Note On':28s}{notes.get_note_name(msg.note):<28s}{msg.velocity}"
+                        f"{'Note On':28s}{get_note_name(msg.note):<28s}{msg.velocity}"
                     )
 
             case "note_off":
@@ -76,7 +70,7 @@ def read_msg_data(track_data: list):
 
                 print(
                     f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                    f"{'Note Off':28s}{notes.get_note_name(msg.note)}"
+                    f"{'Note Off':28s}{get_note_name(msg.note)}"
                 )
 
             case "control_change":
@@ -120,7 +114,7 @@ def read_msg_data(track_data: list):
                 if msg.program < 95:
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                        f"{'Program Change':28s}{dk64data.dk64_instrument_list[msg.program]:28s}{msg.program}"
+                        f"{'Program Change':28s}{DK64_INSTRUMENT_LIST[msg.program]:28s}{msg.program}"
                     )
                 else:
                     print(
@@ -132,12 +126,12 @@ def read_msg_data(track_data: list):
                 if msg.pitch < 0:
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                        f"{'Control Change':28s}{'Pitch':27s}-{round(((-msg.pitch) / 8192)* dk64data.get_pitch_range(temp_instrument), 2)} ST"
+                        f"{'Control Change':28s}{'Pitch':27s}-{round(((-msg.pitch) / 8192)* get_pitch_range(temp_instrument), 2)} ST"
                     )
                 elif msg.pitch > 0:
                     print(
                         f"{time:<8d} Ch. {msg.channel:>2d}{'':4s}"
-                        f"{'Control Change':28s}{'Pitch':27s}+{round(((msg.pitch) / 8191)* dk64data.get_pitch_range(temp_instrument), 2)} ST"
+                        f"{'Control Change':28s}{'Pitch':27s}+{round(((msg.pitch) / 8191)* get_pitch_range(temp_instrument), 2)} ST"
                     )
                 else:
                     print(
@@ -223,16 +217,13 @@ def read_single_track(midi: MidiFile, track_id):
     read_msg_data(track)
 
 
-#
-
-
-def read_midi(midi_file: str):
-    midi = MidiFile(midi_file)
-    notes.set_sharp_or_flat("sharp")  # 'sharp' or 'flat'
+def main():
+    midi = getMidiFile()
+    set_sharp_or_flat("sharp")
     read_midi_data(midi)
     # read_single_track(midi, 1)  # Track number 1-16 or 1-18 before FL fixing
     input("Press enter to close...")
 
 
 if __name__ == "__main__":
-    read_midi(common.getMidiFile())
+    main()

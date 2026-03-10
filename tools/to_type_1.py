@@ -1,19 +1,11 @@
-import mido
-import os
-import tkinter as tk
-from tkinter import filedialog
+from mido import MidiFile
+from small_libs.common import getMidiFile
 
-root = tk.Tk()
-root.withdraw()
 
-OLD_MIDI = filedialog.askopenfilename()
-NEW_MIDI = OLD_MIDI.replace(".mid","_converted.mid")
-
-def convert_type0_type1(midi_type0_file):
-    type_0 = mido.MidiFile(midi_type0_file)
+def convert_type0_type1(type_0: MidiFile) -> MidiFile:
     if type_0.type != 0:
-        return
-    type_1 = mido.MidiFile(
+        raise TypeError("MIDI must be type 0")
+    type_1 = MidiFile(
         type=1,
         ticks_per_beat=type_0.ticks_per_beat)
     time = 0
@@ -41,6 +33,14 @@ def convert_type0_type1(midi_type0_file):
         track = type_1.add_track()
         track.extend(channels[chan]['msg'])
 
-    type_1.save(NEW_MIDI)
+    return type_1
 
-convert_type0_type1(OLD_MIDI)
+
+def main():
+    OLD_MIDI, path = getMidiFile()
+    NEW_MIDI = convert_type0_type1(OLD_MIDI)
+    NEW_MIDI.save(path.replace(".mid", "_converted.mid"))
+
+
+if __name__ == "__main__":
+    main()

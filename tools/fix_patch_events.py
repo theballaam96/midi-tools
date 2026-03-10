@@ -7,17 +7,9 @@ Version 1.1.2
   - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
 """
 
-from tkinter import filedialog
-
-from mido import MidiFile
-from mido import Message
-import small_libs.common as common
-
-valid_CCs = {
-    "volume": 7,
-    "reverb": 91,
-    "pan": 10,
-}
+from mido import MidiFile, Message
+from small_libs.common import getMidiFile
+from small_libs.dk64_data import VALID_CC_EVENTS
 
 
 def fix_program_changes(midi: MidiFile):
@@ -91,11 +83,11 @@ def fix_program_changes(midi: MidiFile):
                         track_messages_less.append(msg)
                         match msg.type:
                             case "control_change":
-                                if msg.control == valid_CCs["reverb"]:
+                                if msg.control == VALID_CC_EVENTS["reverb"]:
                                     previous_reverb = msg.value
-                                if msg.control == valid_CCs["volume"]:
+                                if msg.control == VALID_CC_EVENTS["volume"]:
                                     chnl_vol = msg.value
-                                if msg.control == valid_CCs["pan"]:
+                                if msg.control == VALID_CC_EVENTS["pan"]:
                                     chnl_pan = msg.value
                             case "pitchwheel":
                                 previous_pitch = msg.pitch
@@ -122,15 +114,15 @@ def fix_program_changes(midi: MidiFile):
                             case "control_change":
 
                                 # Volume and panning are reset on patch swap, so those are compared to the default values
-                                if msg.control == valid_CCs["volume"]:
+                                if msg.control == VALID_CC_EVENTS["volume"]:
                                     patch_event_time += msg.time
                                     chnl_vol = msg.value
-                                elif msg.control == valid_CCs["pan"]:
+                                elif msg.control == VALID_CC_EVENTS["pan"]:
                                     patch_event_time += msg.time
                                     chnl_pan = msg.value
 
                                 # Reverb and pitch do not get reset and will only change the value if it has changed
-                                elif msg.control == valid_CCs["reverb"]:
+                                elif msg.control == VALID_CC_EVENTS["reverb"]:
                                     patch_event_time += msg.time
                                     if msg.value != previous_reverb:
                                         chnl_verb = msg.value
@@ -181,7 +173,7 @@ def fix_program_changes(midi: MidiFile):
                             "control_change",
                             channel=program_msg.channel,
                             time=0,
-                            control=valid_CCs["volume"],
+                            control=VALID_CC_EVENTS["volume"],
                             value=chnl_vol,
                         ),
                     )
@@ -193,7 +185,7 @@ def fix_program_changes(midi: MidiFile):
                                 "control_change",
                                 channel=program_msg.channel,
                                 time=0,
-                                control=valid_CCs["pan"],
+                                control=VALID_CC_EVENTS["pan"],
                                 value=chnl_pan,
                             ),
                         )
@@ -216,7 +208,7 @@ def fix_program_changes(midi: MidiFile):
                                 "control_change",
                                 channel=program_msg.channel,
                                 time=0,
-                                control=valid_CCs["reverb"],
+                                control=VALID_CC_EVENTS["reverb"],
                                 value=chnl_verb,
                             ),
                         )
@@ -236,14 +228,11 @@ def fix_program_changes(midi: MidiFile):
     print()
 
 
-#
-
-
-def main(midi_file: str):
-    midi = MidiFile(midi_file)
+def main():
+    midi, path = getMidiFile(path=True)
     fix_program_changes(midi)
-    midi.save(midi_file.replace(".mid", "_patch_fixed.mid"))
+    midi.save(path.replace(".mid", "_patch_fixed.mid"))
 
 
 if __name__ == "__main__":
-    main(common.getMidiFile())
+    main()

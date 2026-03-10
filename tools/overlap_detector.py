@@ -5,23 +5,20 @@ Version 1.2.0
 
 """
 
-import math
-from mido import MidiFile, tick2second
-import tkinter as tk
+from mido import MidiFile
 
 from small_libs.dk64_data import DK64_INSTRUMENT_LIST
 from small_libs.notes import get_note_name, set_sharp_or_flat
 from small_libs.common import getMidiFile
 
-root = tk.Tk()
-root.withdraw()
-
 
 # process MIDI messages
-def check_overlap(input_midi: str, sub_func: bool):
+def check_overlap(input_midi: MidiFile, sub_func: bool):
     """
     Checks for overlapping notes and prints instances of such.
-    sub_func is a combo bool for usage of this function in another file without extra printing, pausing, ect.
+    :params:
+        `input_midi`: the MidiFile object to search through.
+        `sub_func`: a combo bool for usage of this function in another file without extra printing, pausing, ect.
     """
 
     active_notes = (
@@ -89,8 +86,7 @@ def check_overlap(input_midi: str, sub_func: bool):
 
 
 def main():
-
-    set_sharp_or_flat("sharp")  # 'sharp' or 'flat'
+    set_sharp_or_flat("sharp")
     check_overlap(getMidiFile(), False)
 
 

@@ -15,7 +15,6 @@ This script does the following:
 """
 
 from mido import MidiFile, MidiTrack, Message
-import tkinter as tk
 
 from small_libs.dk64_data import VALID_CC_EVENTS, get_pitch_range
 from small_libs.notes import set_sharp_or_flat
@@ -24,9 +23,6 @@ from small_libs.common import getMidiFile, find_tempo_track, find_notes_track
 
 from overlap_detector import check_overlap
 from voice_counter import check_voices
-
-root = tk.Tk()
-root.withdraw()
 
 
 def remove_empty_tracks(midi: MidiFile):
@@ -190,9 +186,6 @@ def remove_unrecognized_messages(midi: MidiFile):
         track[:] = filtered_messages
 
 
-#
-
-
 def clean_midi(midi: MidiFile, path: str):
 
     print("\n" + path + "\n")
@@ -223,5 +216,9 @@ def clean_midi(midi: MidiFile, path: str):
     midi.save(path.replace(".mid", "_adjusted.mid"))
 
 
-if __name__ == "__main__":
+def main():
     clean_midi(*getMidiFile(path=True))
+
+
+if __name__ == "__main__":
+    main()

@@ -6,23 +6,24 @@ from mido import MidiFile, MidiTrack
 from tkinter import filedialog
 
 
-def getMidiFile(**path: bool):
+def getMidiFile(**kwargs):
     """
     Prompts the user for a midi file and returns a MidiFile object of that file.
     :params: 
-        `path`: Optional. If True, will also return the prompted file's path as a string.
+        `path`: `Optional[bool]`. If True, will also return the prompted file's path as a string.
+        `title`: `Optional[str]` the title for the tkinter dialog box.
     """
     file = filedialog.askopenfilename(
         filetypes=[("Midi Files", "*.mid;*.midi"), ("All types", "*.*")],
-        title="Source File",
+        title=kwargs["title"] if "title" in kwargs else "Source File",
     )
     if file == "":
         print("No file presented, closing...")
         exit(0)
-    if path:
-        return MidiFile(file), file
-    else:
-        return MidiFile(file)
+    if "path" in kwargs:
+        if kwargs["path"]:
+            return MidiFile(file), file
+    return MidiFile(file)
 
 
 def find_tempo_track(midi: MidiFile):

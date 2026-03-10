@@ -1,10 +1,6 @@
 from mido import MidiFile
-import tkinter as tk
-from tkinter import filedialog
-import small_libs.common as common
+from small_libs.common import getMidiFile
 
-root = tk.Tk()
-root.withdraw()
 global currentVolume
 
 
@@ -21,12 +17,11 @@ def expression_to_volume(midi: MidiFile):
                         msg.control = 7
 
 
-def clean_midi(midi_file: str):
-    midi = MidiFile(midi_file)
-    print("\n" + midi_file + "\n")
+def main():
+    midi, path = getMidiFile()
     expression_to_volume(midi)
-    midi.save(midi_file.replace(".mid", "_e2v.mid"))
+    midi.save(path.replace(".mid", "_e2v.mid"))
 
 
-clean_midi(common.getMidiFile())
-input("Press the Enter key to continue: ")
+if __name__ == "__main__":
+    main()
