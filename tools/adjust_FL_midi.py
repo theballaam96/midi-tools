@@ -18,14 +18,14 @@ from mido import MidiFile, MidiTrack, Message
 
 from small_libs.dk64_data import VALID_CC_EVENTS, get_pitch_range
 from small_libs.notes import set_sharp_or_flat
-from fix_patch_events import fix_program_changes
 from small_libs.common import getMidiFile, find_tempo_track, find_notes_track
 
+from fix_patch_events import fix_program_changes
 from overlap_detector import check_overlap
 from voice_counter import check_voices
 
 
-def remove_empty_tracks(midi: MidiFile):
+def remove_empty_tracks(midi: MidiFile) -> None:
     total_tracks = len(midi.tracks)
     track_no = 0
     for t in range(total_tracks):
@@ -43,7 +43,7 @@ def remove_empty_tracks(midi: MidiFile):
             track_no += 1
 
 
-def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
+def find_insertion_point(target_track: MidiTrack, total_tempo_time: int) -> tuple[int, int]:
     total_target_time = 0
     for index in range(len(target_track)):
         total_target_time += target_track[index].time
@@ -52,7 +52,7 @@ def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
     return len(target_track), total_target_time
 
 
-def move_tempo(midi: MidiFile):
+def move_tempo(midi: MidiFile) -> None:
     tempo_track = midi.tracks[find_tempo_track(midi)]
     target_track = find_notes_track(midi)
     if target_track == "":
@@ -79,20 +79,20 @@ def move_tempo(midi: MidiFile):
     del midi.tracks[0]
 
 
-def multiply_pitch(pitch: int, bend_range=2):
+def multiply_pitch(pitch: int, bend_range=2) -> int:
     new_pitch = int(pitch * (12 / bend_range))
     clamped_pitch = max(min(8191, new_pitch), -8192)
     return clamped_pitch
 
 
-def get_expected_FL_volume(velocity: int):
+def get_expected_FL_volume(velocity: int) -> float:
     # .62 / 127 ^ 2 * x ^ 2, max = .62
     # .002
     # x + .01, max = .264
     return (0.62 / (127**2)) * (velocity**2)
 
 
-def DK_volume_to_approx_velocity(volume: float):
+def DK_volume_to_approx_velocity(volume: float) -> int:
     # y = .002
     # x + 0.1
     # x = (y / .002)
@@ -101,7 +101,7 @@ def DK_volume_to_approx_velocity(volume: float):
     return round(approx_velocity)
 
 
-def get_adjusted_volume(velocity: int):
+def get_adjusted_volume(velocity: int) -> int:
     maxFL = 0.620
     maxDK = 0.264
     expected_FL_volume = get_expected_FL_volume(velocity)
@@ -111,7 +111,7 @@ def get_adjusted_volume(velocity: int):
     return adjusted_velocity
 
 
-def adjust_events(midi: MidiFile, todo: list):
+def adjust_events(midi: MidiFile, todo: list) -> None:
     """
     adjust_events does the following:
         adjusts the panning to, partially, match fl.
@@ -157,7 +157,7 @@ def adjust_events(midi: MidiFile, todo: list):
                             msg.value = get_adjusted_panning()"""
 
 
-def remove_unrecognized_messages(midi: MidiFile):
+def remove_unrecognized_messages(midi: MidiFile) -> None:
     accepted_messages = [
         "note_off",
         "note_on",
@@ -186,7 +186,7 @@ def remove_unrecognized_messages(midi: MidiFile):
         track[:] = filtered_messages
 
 
-def clean_midi(midi: MidiFile, path: str):
+def clean_midi(midi: MidiFile, path: str) -> None:
 
     print("\n" + path + "\n")
 
@@ -216,7 +216,7 @@ def clean_midi(midi: MidiFile, path: str):
     midi.save(path.replace(".mid", "_adjusted.mid"))
 
 
-def main():
+def main() -> None:
     clean_midi(*getMidiFile(path=True))
 
 

@@ -136,7 +136,7 @@ def unscramble(old_midi: MidiFile) -> MidiFile:
     return completed_midi
 
 
-def main():
+def main() -> None:
     old_midi, path = getMidiFile(path=True)
     if old_midi.type == 0:
         raise TypeError("MIDI must be type 1")

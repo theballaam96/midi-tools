@@ -4,7 +4,7 @@ from small_libs.common import getMidiFile
 global currentVolume
 
 
-def expression_to_volume(midi: MidiFile):
+def expression_to_volume(midi: MidiFile) -> None:
     for track in midi.tracks:
         for msg in track:
             match msg.type:
@@ -17,7 +17,7 @@ def expression_to_volume(midi: MidiFile):
                         msg.control = 7
 
 
-def main():
+def main() -> None:
     midi, path = getMidiFile()
     expression_to_volume(midi)
     midi.save(path.replace(".mid", "_e2v.mid"))

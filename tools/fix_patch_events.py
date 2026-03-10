@@ -12,7 +12,7 @@ from small_libs.common import getMidiFile
 from small_libs.dk64_data import VALID_CC_EVENTS
 
 
-def fix_program_changes(midi: MidiFile):
+def fix_program_changes(midi: MidiFile) -> None:
     """
     Huge function that runs through each track in an input midi file, documents all the program changes per track.
 
@@ -228,7 +228,7 @@ def fix_program_changes(midi: MidiFile):
     print()
 
 
-def main():
+def main() -> None:
     midi, path = getMidiFile(path=True)
     fix_program_changes(midi)
     midi.save(path.replace(".mid", "_patch_fixed.mid"))

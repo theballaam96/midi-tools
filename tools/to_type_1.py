@@ -36,7 +36,7 @@ def convert_type0_type1(type_0: MidiFile) -> MidiFile:
     return type_1
 
 
-def main():
+def main() -> None:
     OLD_MIDI, path = getMidiFile()
     NEW_MIDI = convert_type0_type1(OLD_MIDI)
     NEW_MIDI.save(path.replace(".mid", "_converted.mid"))

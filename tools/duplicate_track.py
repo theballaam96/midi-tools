@@ -2,7 +2,7 @@ from mido import MidiFile, MidiTrack
 from small_libs.common import getMidiFile
 
 
-def duplicate_track_channel(midi, track_num, channel_num):
+def duplicate_track_channel(midi, track_num, channel_num) -> MidiFile:
 
     # Create a new MIDI file to store the duplicated track
     duplicated_track = MidiTrack()
@@ -36,7 +36,7 @@ def duplicate_track_channel(midi, track_num, channel_num):
     return midi
 
 
-def main():
+def main() -> None:
     # Example usage
     input_file, path = getMidiFile(path=True)
     track_num = 8  # Index of the track to duplicate

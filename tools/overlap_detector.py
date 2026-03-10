@@ -13,7 +13,7 @@ from small_libs.common import getMidiFile
 
 
 # process MIDI messages
-def check_overlap(input_midi: MidiFile, sub_func: bool):
+def check_overlap(input_midi: MidiFile, sub_func: bool) -> None:
     """
     Checks for overlapping notes and prints instances of such.
     :params:
@@ -85,7 +85,7 @@ def check_overlap(input_midi: MidiFile, sub_func: bool):
         input("Press enter to close...")
 
 
-def main():
+def main() -> None:
     set_sharp_or_flat("sharp")
     check_overlap(getMidiFile(), False)
 

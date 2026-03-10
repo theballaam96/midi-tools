@@ -12,7 +12,7 @@ from small_libs.common import CC_TO_NAME, getMidiFile
 
 
 # process MIDI messages
-def check_voices(input_midi: MidiFile, sub_func: bool):
+def check_voices(input_midi: MidiFile, sub_func: bool) -> None:
     """
     Checks for voice count and prints if the max is reached.
     sub_func is a combo bool for usage of this function in another file without extra printing, pausing.
@@ -94,7 +94,7 @@ def check_voices(input_midi: MidiFile, sub_func: bool):
         input("Press enter to close...")
 
 
-def main():
+def main() -> None:
     set_sharp_or_flat("sharp")
     check_voices(getMidiFile(), False)
 

@@ -11,7 +11,7 @@ from small_libs.notes import set_sharp_or_flat, get_note_name
 from small_libs.common import CC_TO_NAME, getMidiFile
 
 
-def read_msg_data(track_data: list):
+def read_msg_data(track_data: list) -> None:
     """
     reads a single MidiTrack and prints it to the console.
     """
@@ -190,7 +190,7 @@ def read_msg_data(track_data: list):
     print(f"\n{len(track_data)} events\n\n")
 
 
-def read_midi_data(midi: MidiFile):
+def read_midi_data(midi: MidiFile) -> None:
     track_number = 0
     for track in midi.tracks:
         print(f"\n= Track {track_number + 1} =\n")
@@ -198,13 +198,13 @@ def read_midi_data(midi: MidiFile):
         track_number += 1
 
 
-def read_single_track(midi: MidiFile, track_id):
+def read_single_track(midi: MidiFile, track_id) -> None:
     track_number = track_id - 1
     track = midi.tracks[track_number]
     read_msg_data(track)
 
 
-def main():
+def main() -> None:
     midi = getMidiFile()
     set_sharp_or_flat("sharp")
     read_midi_data(midi)
