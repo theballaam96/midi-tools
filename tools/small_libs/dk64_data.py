@@ -2,10 +2,10 @@
 Separated out dk64 music related data for quick reference in other files / future files
 """
 
-max_voices = 44
+MAX_VOICES = 44
 """max voices dk64 can play at once"""
 
-reverb_tail = 2334000
+REVERB_TAIL = 2334000
 """length of reverb tail in microseconds"""
 
 
@@ -54,7 +54,7 @@ def get_pitch_range(instrument: int):
             return 2
 
 
-dk64_instrument_list = [
+DK64_INSTRUMENT_LIST = [
     "N/A",
     "Marimba",
     "Rototom",

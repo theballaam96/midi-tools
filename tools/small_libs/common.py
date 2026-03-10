@@ -2,14 +2,16 @@
 Common functions to reuse in most files, just to make starting seperate files more consistant and nice.
 """
 
-from mido import MidiFile
-from mido import MidiTrack
+from mido import MidiFile, MidiTrack
 
 import tkinter as tk
 from tkinter import filedialog
 
 
 def getMidiFile():
+    """
+    Prompts the user for a midi file and returns a MidiFile object of that file.
+    """
     file = filedialog.askopenfilename(
         filetypes=[("Midi Files", "*.mid;*.midi"), ("All types", "*.*")],
         title="Source File",
@@ -17,7 +19,7 @@ def getMidiFile():
     if file == "":
         print("No file presented, closing...")
         exit(0)
-    return file
+    return MidiFile(file)
 
 
 def find_tempo_track(midi: MidiFile):
