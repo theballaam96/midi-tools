@@ -1,4 +1,11 @@
+"""
+Version 1.0.1
+
+- This script duplicates a desired track in a MIDI.
+"""
+
 from mido import MidiFile, MidiTrack
+
 from small_libs.common import getMidiFile
 
 
@@ -37,10 +44,9 @@ def duplicate_track_channel(midi, track_num, channel_num) -> MidiFile:
 
 
 def main() -> None:
-    # Example usage
     input_file, path = getMidiFile(path=True)
-    track_num = 8  # Index of the track to duplicate
-    channel_num = 6  # Channel number to duplicate
+    track_num = int(input("Index of the track to duplicate: "))
+    channel_num = int(input("Channel number to duplicate: "))
     output_file = duplicate_track_channel(input_file, track_num, channel_num)
     output_file.save(path.replace(".mid", "_duplicatedtrack.mid"))
 

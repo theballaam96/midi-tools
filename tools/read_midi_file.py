@@ -1,7 +1,7 @@
 """
 Version 1.1.1
 
-This script reads midi data back out to you
+- This script reads MIDI data back out to you.
 """
 
 from mido import MidiFile, tempo2bpm

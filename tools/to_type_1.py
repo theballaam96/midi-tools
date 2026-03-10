@@ -1,4 +1,11 @@
+"""
+Version 1.0.1
+
+- This script converts a type 0 MIDI into a type 1 MIDI.
+"""
+
 from mido import MidiFile
+
 from small_libs.common import getMidiFile
 
 

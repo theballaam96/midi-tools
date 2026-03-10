@@ -1,4 +1,11 @@
+"""
+Version 1.0.1
+
+- This script attempts to sort a MIDI by seperating each detected program change into its own track.
+"""
+
 from mido import MidiFile, MidiTrack, Message, MetaMessage, merge_tracks
+
 from small_libs.common import getMidiFile
 
 

@@ -1,4 +1,11 @@
+"""
+Version 1.0.1
+
+- This script copies a track from one MIDI file and places it into another MIDI file.
+"""
+
 from mido import MidiFile, MidiTrack
+
 from small_libs.common import getMidiFile
 
 
@@ -39,11 +46,10 @@ def copy_track(source_mid: MidiFile, dest_mid: MidiFile, track_num: int, channel
 
 
 def main() -> None:
-    # Example usage
     source_file = getMidiFile(title="Source File")
     destination_file, destination_path = getMidiFile(path=True, title="Destination File")
-    track_num = 11  # Index of the track to port
-    channel_num = 9  # Channel number to port
+    track_num = int(input("Index of the track to port: "))
+    channel_num = int(input("Channel number to port: "))
     ported_midi = copy_track(source_file, destination_file, track_num, channel_num)
     ported_midi.save(destination_path.replace(".mid", "_portedtrack.mid"))
 

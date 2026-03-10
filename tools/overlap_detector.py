@@ -2,7 +2,6 @@
 Version 1.2.0
 
 - This script checks a MIDI file to see if there are any overlapping notes: Two note_on events of the same note in succession without a note_off between.
-
 """
 
 from mido import MidiFile

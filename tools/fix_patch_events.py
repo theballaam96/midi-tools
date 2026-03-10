@@ -1,13 +1,13 @@
 """
 Version 1.1.2
 
-
-- Deletes duplicate patch events caused by fl
+- Deletes duplicate patch events caused by FL.
   - This also condenses the subsequent events on the same tick caused by patch changes.
-  - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
+  - This means that FL midis no longer need to be offset or have events at the loop to fix the patch bug!!
 """
 
 from mido import MidiFile, Message
+
 from small_libs.common import getMidiFile
 from small_libs.dk64_data import VALID_CC_EVENTS
 

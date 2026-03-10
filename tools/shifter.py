@@ -1,8 +1,15 @@
+"""
+Version 1.0.1
+
+- This script shifts all of the notes in a MIDI by a select amount of ticks.
+"""
+
 from mido import MidiFile
+
 from small_libs.common import getMidiFile
 
 
-def shiftMidi(midi: MidiFile, path: str, shift: int) -> MidiFile:
+def shiftMidi(midi: MidiFile, shift: int) -> MidiFile:
     for track in midi.tracks:
         performed_shift = False
         for msg in track:
@@ -17,7 +24,7 @@ def shiftMidi(midi: MidiFile, path: str, shift: int) -> MidiFile:
 def main() -> None:
     midi, path = getMidiFile()
     shifty = int(input("Shift amount: "))
-    shifted_midi = shiftMidi(midi, path, shifty)
+    shifted_midi = shiftMidi(midi, shifty)
     shifted_midi.save(path.replace(".mid", "_shifted.mid"))
 
 

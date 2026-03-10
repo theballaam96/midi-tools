@@ -1,17 +1,17 @@
 """
 Version 1.1.5
 
-This script does the following:
-- Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
-- Multiplies all pitch values by 6 so they sound the same as in FL
-  - or alternativly multiplies to the proper instrument bend range. (see dk64_data.py for instrument ranges)
-- Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
-  - The max volume of FL has to be adjusted by the user to compensate for DK64's max volume.
-- Removes unrecognized MIDI events
-- Deletes duplicate patch events caused by fl
-  - This also condenses the subsequent events on the same tick caused by patch changes.
-  - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
-- Calls the overlap detector at the end, for convenience.
+- This script does the following:
+  - Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
+  - Multiplies all pitch values by 6 so they sound the same as in FL.
+    - or alternativly multiplies to the proper instrument bend range. (see dk64_data.py for instrument ranges)
+  - Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
+    - The max volume of FL has to be adjusted by the user to compensate for DK64's max volume.
+  - Removes unrecognized MIDI events.
+  - Deletes duplicate patch events caused by FL.
+    - This also condenses the subsequent events on the same tick caused by patch changes.
+    - This means that FL midis no longer need to be offset or have events at the loop to fix the patch bug!!
+  - Calls the overlap detector at the end, for convenience.
 """
 
 from mido import MidiFile, MidiTrack, Message

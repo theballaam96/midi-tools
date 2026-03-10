@@ -1,4 +1,11 @@
+"""
+Version 1.0.0
+
+- This script simply inserts a set_tempo event into a MIDI file.
+"""
+
 from mido import MidiFile, MetaMessage
+
 from small_libs.common import getMidiFile
 
 
