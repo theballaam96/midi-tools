@@ -18,7 +18,7 @@ from mido import MidiFile, MidiTrack, Message
 
 from small_libs.dk64_data import VALID_CC_EVENTS, get_pitch_range
 from small_libs.notes import set_sharp_or_flat
-import fix_patch_events as patcher
+from fix_patch_events import fix_program_changes
 from small_libs.common import getMidiFile, find_tempo_track, find_notes_track
 
 from overlap_detector import check_overlap
@@ -205,7 +205,7 @@ def clean_midi(midi: MidiFile, path: str):
     adjust_events(midi, ["pitch-instrument", "volume"])
     remove_unrecognized_messages(midi)
 
-    patcher.fix_program_changes(midi)
+    fix_program_changes(midi)
 
     # sets note names names to 'sharp' or 'flat', then checks for overlapping notes
     set_sharp_or_flat("sharp")
