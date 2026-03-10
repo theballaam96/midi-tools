@@ -35,6 +35,7 @@ def duplicate_track_channel(midi, track_num, channel_num):
 
     return midi
 
+
 def main():
     # Example usage
     input_file, path = getMidiFile(path=True)

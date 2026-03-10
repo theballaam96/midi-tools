@@ -8,20 +8,7 @@ from mido import MidiFile
 
 from small_libs.dk64_data import REVERB_TAIL, MAX_VOICES, get_instrument_release
 from small_libs.notes import set_sharp_or_flat
-from small_libs.common import getMidiFile
-
-
-cc_to_name = {
-    1: "Mod Wheel",
-    5: "Portamento",
-    6: "Data Entry",
-    7: "Volume",
-    10: "Panning",
-    11: "Expression",
-    91: "Reverb",
-    100: "RPN 100",
-    101: "RPN 101",
-}
+from small_libs.common import CC_TO_NAME, getMidiFile
 
 
 # process MIDI messages
@@ -82,7 +69,7 @@ def check_voices(input_midi: MidiFile, sub_func: bool):
                 tempo = msg.tempo
 
             elif msg.type == "control_change":
-                if cc_to_name[msg.control] == "Reverb" and msg.value > 0:
+                if CC_TO_NAME[msg.control] == "Reverb" and msg.value > 0:
                     reverb = True
 
     all_times = sorted(note_events)

@@ -2,8 +2,21 @@
 Common functions to reuse in most files, just to make starting seperate files more consistant and nice.
 """
 
-from mido import MidiFile, MidiTrack
+from mido import MidiFile
 from tkinter import filedialog
+
+
+CC_TO_NAME = {
+    1: "Mod Wheel",
+    5: "Portamento",
+    6: "Data Entry",
+    7: "Volume",
+    10: "Panning",
+    11: "Expression",
+    91: "Reverb",
+    100: "RPN 100",
+    101: "RPN 101",
+}
 
 
 def getMidiFile(**kwargs):

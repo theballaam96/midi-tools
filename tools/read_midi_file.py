@@ -8,20 +8,7 @@ from mido import MidiFile, tempo2bpm
 
 from small_libs.dk64_data import DK64_INSTRUMENT_LIST, get_pitch_range
 from small_libs.notes import set_sharp_or_flat, get_note_name
-from small_libs.common import getMidiFile
-
-
-cc_to_name = {
-    1: "Mod Wheel",
-    5: "Portamento",
-    6: "Data Entry",
-    7: "Volume",
-    10: "Panning",
-    11: "Expression",
-    91: "Reverb",
-    100: "RPN 100",
-    101: "RPN 101",
-}
+from small_libs.common import CC_TO_NAME, getMidiFile
 
 
 def read_msg_data(track_data: list):
@@ -74,8 +61,8 @@ def read_msg_data(track_data: list):
                 )
 
             case "control_change":
-                if msg.control in cc_to_name:
-                    control_type = cc_to_name[msg.control]
+                if msg.control in CC_TO_NAME:
+                    control_type = CC_TO_NAME[msg.control]
                     match control_type:
                         case "Reverb":
                             print(
