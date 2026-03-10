@@ -1,9 +1,13 @@
-from mido import MidiFile, MidiTrack, Message, MetaMessage, merge_tracks
-import tkinter as tk
-from tkinter import filedialog
+"""
+Version 1.0.1
 
-root = tk.Tk()
-root.withdraw()
+- This script attempts to sort a MIDI by seperating each detected program change into its own track.
+"""
+
+from mido import MidiFile, MidiTrack, Message, MetaMessage, merge_tracks
+
+from small_libs.common import getMidiFile
+
 
 def find_correct_track(detected_programs: dict, current_program: int) -> int:
     """Reverse lookup to find the current track number."""
@@ -11,6 +15,7 @@ def find_correct_track(detected_programs: dict, current_program: int) -> int:
         if detected_programs.get(j+1) == current_program: # until it finds the track with the correct program value
             return j+1
     return 0 # if no match is found, toss it in the first track along with tempo
+
 
 def search_dict(global_detected_programs: dict) -> dict:
     """Searches global_detected_programs for entries with matching values and returns a dict of the matches."""
@@ -35,11 +40,13 @@ def search_dict(global_detected_programs: dict) -> dict:
 
     return matching_tracks
 
+
 def cipher_key(matching_cipher: dict, current_program: int) -> int:
     """Surely theres a simpler way to do this"""
     for j in range(len(matching_cipher)):
         if matching_cipher.get(j) == current_program:
             return j
+
 
 def unscramble(old_midi: MidiFile) -> MidiFile:
     """This attempts to sort a midi by seperating each detected program change into its own track."""
@@ -134,14 +141,15 @@ def unscramble(old_midi: MidiFile) -> MidiFile:
             c = 0
         i += 1
     return completed_midi
-    
 
-def clean_midi(midi_file: str):
-    old_midi = MidiFile(midi_file)
+
+def main() -> None:
+    old_midi, path = getMidiFile(path=True)
     if old_midi.type == 0:
         raise TypeError("MIDI must be type 1")
-    print("\n" + midi_file + "\n")
     new_midi = unscramble(old_midi)
-    new_midi.save(midi_file.replace(".mid", "_sorted.mid"))
+    new_midi.save(path.replace(".mid", "_sorted.mid"))
 
-clean_midi(filedialog.askopenfilename())
+
+if __name__ == "__main__":
+    main()

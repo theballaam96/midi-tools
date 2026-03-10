@@ -3,21 +3,40 @@ Common functions to reuse in most files, just to make starting seperate files mo
 """
 
 from mido import MidiFile
-from mido import MidiTrack
-
-import tkinter as tk
 from tkinter import filedialog
 
 
-def getMidiFile():
+CC_TO_NAME = {
+    1: "Mod Wheel",
+    5: "Portamento",
+    6: "Data Entry",
+    7: "Volume",
+    10: "Panning",
+    11: "Expression",
+    91: "Reverb",
+    100: "RPN 100",
+    101: "RPN 101",
+}
+
+
+def getMidiFile(**kwargs):
+    """
+    Prompts the user for a midi file and returns a MidiFile object of that file.
+    :params: 
+        `path`: `Optional[bool]`. If True, will also return the prompted file's path as a string.
+        `title`: `Optional[str]` the title for the tkinter dialog box.
+    """
     file = filedialog.askopenfilename(
         filetypes=[("Midi Files", "*.mid;*.midi"), ("All types", "*.*")],
-        title="Source File",
+        title=kwargs["title"] if "title" in kwargs else "Source File",
     )
     if file == "":
         print("No file presented, closing...")
         exit(0)
-    return file
+    if "path" in kwargs:
+        if kwargs["path"]:
+            return MidiFile(file), file
+    return MidiFile(file)
 
 
 def find_tempo_track(midi: MidiFile):

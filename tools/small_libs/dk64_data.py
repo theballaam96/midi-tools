@@ -1,13 +1,20 @@
 """
-Separated out dk64 music related data for quick reference in other files / future files
+Separated out dk64 music related data for quick reference in other files / future files.
 """
 
-max_voices = 44
-"""max voices dk64 can play at once"""
+MAX_VOICES = 44
+"""Max voices dk64 can play at once."""
 
-reverb_tail = 2334000
-"""length of reverb tail in microseconds"""
+REVERB_TAIL = 2334000
+"""Length of reverb tail in microseconds."""
 
+VALID_CC_EVENTS = {
+    "volume": 7,
+    "pan": 10,
+    "portamento": 65, # useless, but might as well
+    "reverb": 91,
+}
+"""Control change events that DK64 recognises."""
 
 def get_instrument_release(instrument: int):
     """
@@ -27,7 +34,7 @@ def get_instrument_release(instrument: int):
 
 def get_pitch_range(instrument: int):
     """
-    returns pitch bend range in ±Semitones based on instrument patch/instrument number
+    Returns pitch bend range in ±Semitones based on instrument patch/instrument number.
     """
 
     match instrument:
@@ -54,7 +61,7 @@ def get_pitch_range(instrument: int):
             return 2
 
 
-dk64_instrument_list = [
+DK64_INSTRUMENT_LIST = [
     "N/A",
     "Marimba",
     "Rototom",

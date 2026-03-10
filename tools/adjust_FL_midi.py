@@ -1,44 +1,31 @@
 """
-Version 1.1.4
+Version 1.1.5
 
-This script does the following:
-- Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
-- Multiplies all pitch values by 6 so they sound the same as in FL
-  - or alternativly multiplies to the proper instrument bend range. (see dk64_data.py for instrument ranges)
-- Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
-  - The max volume of FL has to be adjusted by the user to compensate for DK64's max volume.
-- Removes unrecognized MIDI events
-- Deletes duplicate patch events caused by fl
-  - This also condenses the subsequent events on the same tick caused by patch changes.
-  - This means that fl midis no longer need to be offset or have events at the loop to fix the patch bug!!
-- Calls the overlap detector at the end, for convenience.
+- This script does the following:
+  - Removes the empty tracks FL creates and merges the tempo track with another track, allowing 16 channels to be used.
+  - Multiplies all pitch values by 6 so they sound the same as in FL.
+    - or alternativly multiplies to the proper instrument bend range. (see dk64_data.py for instrument ranges)
+  - Converts velocity and volume events to the DK64 linear curve (as opposed to FL's exponential curve)
+    - The max volume of FL has to be adjusted by the user to compensate for DK64's max volume.
+  - Removes unrecognized MIDI events.
+  - Deletes duplicate patch events caused by FL.
+    - This also condenses the subsequent events on the same tick caused by patch changes.
+    - This means that FL midis no longer need to be offset or have events at the loop to fix the patch bug!!
+  - Calls the overlap detector at the end, for convenience.
 """
 
-from mido import MidiFile
-from mido import MidiTrack
-from mido import Message
-import tkinter as tk
-from tkinter import filedialog
+from mido import MidiFile, MidiTrack, Message
 
-import small_libs.dk64_data as dk64data
-import small_libs.notes as note_names
-import fix_patch_events as patcher
-import small_libs.common as common
+from small_libs.dk64_data import VALID_CC_EVENTS, get_pitch_range
+from small_libs.notes import set_sharp_or_flat
+from small_libs.common import getMidiFile, find_tempo_track, find_notes_track
 
+from fix_patch_events import fix_program_changes
 from overlap_detector import check_overlap
 from voice_counter import check_voices
 
-root = tk.Tk()
-root.withdraw()
 
-valid_CCs = {
-    "volume": 7,
-    "reverb": 91,
-    "pan": 10,
-}
-
-
-def remove_empty_tracks(midi: MidiFile):
+def remove_empty_tracks(midi: MidiFile) -> None:
     total_tracks = len(midi.tracks)
     track_no = 0
     for t in range(total_tracks):
@@ -56,7 +43,7 @@ def remove_empty_tracks(midi: MidiFile):
             track_no += 1
 
 
-def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
+def find_insertion_point(target_track: MidiTrack, total_tempo_time: int) -> tuple[int, int]:
     total_target_time = 0
     for index in range(len(target_track)):
         total_target_time += target_track[index].time
@@ -65,9 +52,9 @@ def find_insertion_point(target_track: MidiTrack, total_tempo_time: int):
     return len(target_track), total_target_time
 
 
-def move_tempo(midi: MidiFile):
-    tempo_track = midi.tracks[common.find_tempo_track(midi)]
-    target_track = common.find_notes_track(midi)
+def move_tempo(midi: MidiFile) -> None:
+    tempo_track = midi.tracks[find_tempo_track(midi)]
+    target_track = find_notes_track(midi)
     if target_track == "":
         input("ERROR: This file is empty; nowhere to place tempo...")
         exit(1)
@@ -92,20 +79,20 @@ def move_tempo(midi: MidiFile):
     del midi.tracks[0]
 
 
-def multiply_pitch(pitch: int, bend_range=2):
+def multiply_pitch(pitch: int, bend_range=2) -> int:
     new_pitch = int(pitch * (12 / bend_range))
     clamped_pitch = max(min(8191, new_pitch), -8192)
     return clamped_pitch
 
 
-def get_expected_FL_volume(velocity: int):
+def get_expected_FL_volume(velocity: int) -> float:
     # .62 / 127 ^ 2 * x ^ 2, max = .62
     # .002
     # x + .01, max = .264
     return (0.62 / (127**2)) * (velocity**2)
 
 
-def DK_volume_to_approx_velocity(volume: float):
+def DK_volume_to_approx_velocity(volume: float) -> int:
     # y = .002
     # x + 0.1
     # x = (y / .002)
@@ -114,7 +101,7 @@ def DK_volume_to_approx_velocity(volume: float):
     return round(approx_velocity)
 
 
-def get_adjusted_volume(velocity: int):
+def get_adjusted_volume(velocity: int) -> int:
     maxFL = 0.620
     maxDK = 0.264
     expected_FL_volume = get_expected_FL_volume(velocity)
@@ -124,7 +111,7 @@ def get_adjusted_volume(velocity: int):
     return adjusted_velocity
 
 
-def adjust_events(midi: MidiFile, todo: list):
+def adjust_events(midi: MidiFile, todo: list) -> None:
     """
     adjust_events does the following:
         adjusts the panning to, partially, match fl.
@@ -150,7 +137,7 @@ def adjust_events(midi: MidiFile, todo: list):
                     # calls the function to return the bend range and give that to the function to use
                     elif "pitch-instrument" in todo:
                         msg.pitch = multiply_pitch(
-                            msg.pitch, dk64data.get_pitch_range(instrument)
+                            msg.pitch, get_pitch_range(instrument)
                         )
 
                 case "note_on":
@@ -158,7 +145,7 @@ def adjust_events(midi: MidiFile, todo: list):
                         msg.velocity = get_adjusted_volume(msg.velocity)
 
                 case "control_change":
-                    if msg.control == valid_CCs["volume"]:
+                    if msg.control == VALID_CC_EVENTS["volume"]:
                         if "volume" in todo:
                             msg.value = get_adjusted_volume(msg.value)
 
@@ -170,7 +157,7 @@ def adjust_events(midi: MidiFile, todo: list):
                             msg.value = get_adjusted_panning()"""
 
 
-def remove_unrecognized_messages(midi: MidiFile):
+def remove_unrecognized_messages(midi: MidiFile) -> None:
     accepted_messages = [
         "note_off",
         "note_on",
@@ -189,7 +176,7 @@ def remove_unrecognized_messages(midi: MidiFile):
                 if msg.type != "control_change":
                     good = True
                 else:
-                    if msg.control in valid_CCs.values():
+                    if msg.control in VALID_CC_EVENTS.values():
                         good = True
             if good:
                 filtered_messages.append(msg)
@@ -199,13 +186,9 @@ def remove_unrecognized_messages(midi: MidiFile):
         track[:] = filtered_messages
 
 
-#
+def clean_midi(midi: MidiFile, path: str) -> None:
 
-
-def clean_midi(midi_file: str):
-
-    midi = MidiFile(midi_file)
-    print("\n" + midi_file + "\n")
+    print("\n" + path + "\n")
 
     remove_empty_tracks(midi)
     move_tempo(midi)
@@ -222,16 +205,20 @@ def clean_midi(midi_file: str):
     adjust_events(midi, ["pitch-instrument", "volume"])
     remove_unrecognized_messages(midi)
 
-    patcher.fix_program_changes(midi)
+    fix_program_changes(midi)
 
     # sets note names names to 'sharp' or 'flat', then checks for overlapping notes
-    note_names.set_sharp_or_flat("sharp")
+    set_sharp_or_flat("sharp")
     check_overlap(midi, True)
     check_voices(midi, True)
 
     # saves file with '_adjusted' added to the filename
-    midi.save(midi_file.replace(".mid", "_adjusted.mid"))
+    midi.save(path.replace(".mid", "_adjusted.mid"))
+
+
+def main() -> None:
+    clean_midi(*getMidiFile(path=True))
 
 
 if __name__ == "__main__":
-    clean_midi(common.getMidiFile())
+    main()

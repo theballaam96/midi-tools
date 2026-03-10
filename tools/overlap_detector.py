@@ -1,28 +1,23 @@
 """
-Version 1.1.1
+Version 1.2.0
 
-- This script checks a MIDI file to see if there are any overlapping notes: a note on event when the last note wasn't closed.
-
+- This script checks a MIDI file to see if there are any overlapping notes: Two note_on events of the same note in succession without a note_off between.
 """
 
-import math
-from mido import MidiFile, tick2second
-import tkinter as tk
-from tkinter import filedialog
+from mido import MidiFile
 
-import small_libs.dk64_data as dk64data
-import small_libs.notes as note_names
-import small_libs.common as common
-
-root = tk.Tk()
-root.withdraw()
+from small_libs.dk64_data import DK64_INSTRUMENT_LIST
+from small_libs.notes import get_note_name, set_sharp_or_flat
+from small_libs.common import getMidiFile
 
 
 # process MIDI messages
-def check_overlap(input_midi: str, sub_func: bool):
+def check_overlap(input_midi: MidiFile, sub_func: bool) -> None:
     """
     Checks for overlapping notes and prints instances of such.
-    sub_func is a combo bool for usage of this function in another file without extra printing, pausing, ect.
+    :params:
+        `input_midi`: the MidiFile object to search through.
+        `sub_func`: a combo bool for usage of this function in another file without extra printing, pausing, ect.
     """
 
     active_notes = (
@@ -32,12 +27,12 @@ def check_overlap(input_midi: str, sub_func: bool):
     has_overlapping = False
     track_name = None
 
-    for original_track in input_midi.tracks:
+    for track_index, original_track in enumerate(input_midi.tracks):
 
         current_instrument = ""  # contains the name of the current dk64 instrument
         absolute_ticks = 0  # contains the current time when processing each event
 
-        for msg in original_track:
+        for msg_index, msg in enumerate(original_track):
 
             absolute_ticks += msg.time
 
@@ -52,8 +47,17 @@ def check_overlap(input_midi: str, sub_func: bool):
                     case "note_on":
                         if msg.note in active_notes:
                             print(
-                                f'Overlapping note!{"":9s}{note_names.get_note_name(msg.note):11s}Bar: {round(absolute_ticks / input_midi.ticks_per_beat / numerator + 1, 2):>6.2f}{"":9s}Tick: {absolute_ticks:>6d}{"":9s}Channel {msg.channel:<2d}{"":9s}"{track_name}" : {current_instrument}'
+                                f'Overlapping note!{"":9s}{get_note_name(msg.note):11s}'
+                                f'Bar: {round(absolute_ticks / input_midi.ticks_per_beat / numerator + 1, 2):>6.2f}{"":9s}'
+                                f'Tick: {absolute_ticks:>6d}{"":9s}'
+                                f'Channel {msg.channel:<2d}{"":9s}'
+                                f'{track_name if track_name is not None else f"Track {track_index}"}: {current_instrument}'
                             )
+
+                            next_msg = original_track[msg_index + 1]
+                            if next_msg.type == "note_off" and next_msg.note == msg.note and next_msg.time == 0:
+                                print("Listed overlap is 0 ticks long so no action is needed")
+                            
                             has_overlapping = True
                         else:
                             active_notes.append(msg.note)
@@ -62,9 +66,7 @@ def check_overlap(input_midi: str, sub_func: bool):
                         if msg.program >= 95:
                             current_instrument = f"Non-DK64 Instrument: {msg.program}"
                         else:
-                            current_instrument = dk64data.dk64_instrument_list[
-                                msg.program
-                            ]
+                            current_instrument = DK64_INSTRUMENT_LIST[msg.program]
 
                     case "time_signature":
                         numerator = msg.numerator
@@ -82,10 +84,9 @@ def check_overlap(input_midi: str, sub_func: bool):
         input("Press enter to close...")
 
 
-def main():
-
-    note_names.set_sharp_or_flat("sharp")  # 'sharp' or 'flat'
-    check_overlap(MidiFile(common.getMidiFile()), False)
+def main() -> None:
+    set_sharp_or_flat("sharp")
+    check_overlap(getMidiFile(), False)
 
 
 if __name__ == "__main__":

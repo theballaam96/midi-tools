@@ -1,19 +1,17 @@
-import mido
-import tkinter as tk
-from tkinter import filedialog
-import small_libs.common as common
+"""
+Version 1.0.1
 
-root = tk.Tk()
-root.withdraw()
+- This script copies a track from one MIDI file and places it into another MIDI file.
+"""
+
+from mido import MidiFile, MidiTrack
+
+from small_libs.common import getMidiFile
 
 
-def copy_track(file_with_track, destination_file, output_file, track_num, channel_num):
-    # Load the MIDI file
-    source_mid = mido.MidiFile(file_with_track)
-    dest_mid = mido.MidiFile(destination_file)
-
+def copy_track(source_mid: MidiFile, dest_mid: MidiFile, track_num: int, channel_num: int) -> MidiFile:
     # Create a new MIDI file to store the duplicated track
-    duplicated_track = mido.MidiTrack()
+    duplicated_track = MidiTrack()
     vacant_channels = list(range(16))
 
     for i, track in enumerate(dest_mid.tracks):
@@ -44,13 +42,17 @@ def copy_track(file_with_track, destination_file, output_file, track_num, channe
     dest_mid.tracks.append(duplicated_track)
 
     # Save the new MIDI file
-    dest_mid.save(output_file)
+    return dest_mid
 
 
-# Example usage
-source_file = common.getMidiFile()
-destination_file = filedialog.askopenfilename(title="Destination File")
-output_file = destination_file.replace(".mid", "_portedtrack.mid")
-track_num = 11  # Index of the track to port
-channel_num = 9  # Channel number to port
-copy_track(source_file, destination_file, output_file, track_num, channel_num)
+def main() -> None:
+    source_file = getMidiFile(title="Source File")
+    destination_file, destination_path = getMidiFile(path=True, title="Destination File")
+    track_num = int(input("Index of the track to port: "))
+    channel_num = int(input("Channel number to port: "))
+    ported_midi = copy_track(source_file, destination_file, track_num, channel_num)
+    ported_midi.save(destination_path.replace(".mid", "_portedtrack.mid"))
+
+
+if __name__ == "__main__":
+    main()

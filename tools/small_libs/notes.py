@@ -6,9 +6,9 @@ Reminder: use set_sharp_or_flat(...) before get_note_name(...), or don't :3
 note_names = ["Do", "Di", "Re", "Ri", "Mi", "Fa", "Fi", "Sol", "Si", "La", "Li", "Ti"]
 
 
-def set_sharp_or_flat(sign: str):
+def set_sharp_or_flat(sign: str) -> None:
     """
-    Sets the sign for the notes to 'sharp' or 'flat'
+    Sets the sign for the notes to `"sharp"` or `"flat"`
     """
 
     global note_names
@@ -44,10 +44,9 @@ def set_sharp_or_flat(sign: str):
         ]
 
 
-def get_note_name(note: int):
+def get_note_name(note: int) -> str:
     """
     Retrieves the note name from the Midi note number.
     """
-
     note_name = f"{ note_names[note % 12] }{ int(note / 12) }"
     return note_name
