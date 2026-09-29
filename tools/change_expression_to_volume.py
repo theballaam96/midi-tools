@@ -26,7 +26,7 @@ def expression_to_volume(midi: MidiFile) -> None:
 
 
 def main() -> None:
-    midi, path = getMidiFile()
+    midi, path = getMidiFile(path=True)
     expression_to_volume(midi)
     midi.save(path.replace(".mid", "_e2v.mid"))
 
